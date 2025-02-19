@@ -19,8 +19,25 @@ namespace Authentication.WebHost.Client.Pages
         public string password;
         public string errorMessage;
 
+        private bool isPasswordVisible = false;
+
+        private string passwordInputType => isPasswordVisible ? "text" : "password";
+
+        private bool isLoading = false;
+
+        
+
+
+        private void TogglePasswordVisibility()
+        {
+            isPasswordVisible = !isPasswordVisible;
+        }
+
+
         public async Task LoginUser()
         {
+            isLoading = true;
+
             User user = new()
             {
                 Email = email,
@@ -43,6 +60,7 @@ namespace Authentication.WebHost.Client.Pages
             {
                 errorMessage = "Invalid credentials!";
             }
+            isLoading = false;
         }
 
 
