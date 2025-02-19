@@ -1,0 +1,13 @@
+﻿@page "/login"
+
+<h3>Login</h3>
+
+@if (errorMessage != null)
+{
+    <p style="color:red">@errorMessage</p>
+}
+
+<input @bind="email" placeholder="Email" />
+<input @bind="password" placeholder="Password" />
+<button @onclick="LoginUser">Login</button>
+
