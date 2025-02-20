@@ -56,12 +56,13 @@ public class AuthService
     {
         return await _js.InvokeAsync<string>("localStorage.getItem", "token") ?? "";
     }
-
+        
     public async Task<List<User>> GeAllUesr()
     {
         //var token = await GetToken();
         //_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        var result = await _http.GetFromJsonAsync<List<User>>("/GetAllUser");
+        //var result = await _http.GetFromJsonAsync<List<User>>("api/Auth/GetAllUser");
+        var result = await _http.GetFromJsonAsync<List<User>>("GetAllUser");
         return result;
     }
 }

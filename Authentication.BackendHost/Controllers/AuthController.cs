@@ -26,7 +26,7 @@ namespace Authentication.BackendHost.Controllers
         }
 
         //[Authorize]
-        [HttpGet("/GetAllUser")]
+        [HttpGet("GetAllUser")]
         public async Task<IActionResult> GetAllUser()
         {
             var users = await ApplicationDb.Users.ToListAsync();
