@@ -1,42 +1,8 @@
 ﻿@page "/"
-@using Authentication.WebHost.Client.Layout
 @layout BlankLayout
-<div class="login-container">
-    <div class="card login-card shadow-lg p-4">
-        <h3 class="text-center text-primary mb-3">Login</h3>
 
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger">@errorMessage</div>
-        }
+<LodinTemplate IsLoginPage="true" ErrorMessage="@errorMessage" OutModel="@LoginUser" />
 
-        <div class="mb-3">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" placeholder="Enter your email" @bind="email" />
-        </div>
+<Loader IsLoading="@isLoading" />
 
-        <div class="mb-3 position-relative">
-            <label class="form-label">Password</label>
-            <input type="@passwordInputType" class="form-control" placeholder="Enter your password" @bind="password" />
-            <span class="password-toggle" @onclick="TogglePasswordVisibility">
-                <i class="@(isPasswordVisible ? "bi bi-eye-slash" : "bi bi-eye")"></i>
-            </span>
-        </div>
-
-        <button class="btn btn-primary w-100" @onclick="LoginUser">Login</button>
-
-        <div class="text-center mt-3">
-            <small>Don't have an account? <a href="/register" class="text-primary">Sign Up</a></small>
-        </div>
-    </div>
-</div>
-
-@if (isLoading)
-{
-    <div class="loader-overlay">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
 

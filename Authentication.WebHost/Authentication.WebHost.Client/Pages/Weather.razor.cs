@@ -1,4 +1,5 @@
-﻿using Authentication.Shared.Models;
+﻿using System.Data;
+using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -13,29 +14,72 @@ namespace Authentication.WebHost.Client.Pages
         [Inject]
         AuthenticationStateProvider AuthStateProvider { get; set; }
 
+        public User Model { get; set; } = new();
 
         public List<User> Users { get; set; }
+
+        public bool isLoading = false;
+
+        public string textLabel = "Add";
 
         protected override async void OnAfterRender(bool firstRender)
         {
             if (firstRender)
             {
-                Users = await AuthService.GeAllUesr();
-                StateHasChanged();
+                await GetAllUsers();
             }
         }
 
-        private async Task LogoutUser()
+        async Task GetAllUsers()
         {
-            
-            await AuthService.Logout();
-
-            if (AuthStateProvider is CustomAuthStateProvider customAuthProvider)
-            {
-                // Notify authentication state change
-                customAuthProvider.NotifyUserLogout();
-            }
+            Users = await AuthService.GeAllUesr();
+            StateHasChanged();
 
         }
+
+        async Task Submit()
+        {
+            if (textLabel == "Add")
+            {
+                await Add();
+            }
+            else
+            {
+                await Update();
+            }
+        }
+
+        async Task Add()
+        {
+            isLoading = true;
+            var isAdded = await AuthService.Register(Model);
+            if (isAdded)
+            {
+                await GetAllUsers();
+            }
+            isLoading = false;
+            StateHasChanged();
+        }
+
+        async Task Update()
+        {
+            isLoading = true;
+            var isAdded = await AuthService.Update(Model);
+            if (isAdded)
+            {
+                await GetAllUsers();
+            }
+            isLoading = false;
+            StateHasChanged();
+        }
+
+        async Task GetByEmailId(string email)
+        {
+            var obj = await AuthService.GetByEmail(email);
+            Model = obj;
+            textLabel = "Update";
+            StateHasChanged();
+        }
+
     }
 }

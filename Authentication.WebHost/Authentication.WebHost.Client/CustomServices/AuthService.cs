@@ -14,9 +14,17 @@ public class AuthService
         _js = js;
     }
 
+    // REGISTER / ADD (BOTH SAME)
     public async Task<bool> Register(User user)
     {
         var response = await _http.PostAsJsonAsync("/register", user);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> Update(User user)
+    {
+        user.Password = string.Empty;
+        var response = await _http.PutAsJsonAsync("/update", user);
         return response.IsSuccessStatusCode;
     }
 
@@ -33,6 +41,12 @@ public class AuthService
         return string.Empty;
     }
 
+    public async Task<User> GetByEmail(string email)
+    {
+        var result = await _http.GetFromJsonAsync<User>($"/GetByEmail/{email}");
+        return result;
+    }
+
     public async Task Logout()
     {
         await _js.InvokeVoidAsync("localStorage.removeItem", "token"); // Remove JWT from localStorage
@@ -45,7 +59,8 @@ public class AuthService
 
     public async Task<List<User>> GeAllUesr()
     {
-        //_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", GetToken().Result);
+        //var token = await GetToken();
+        //_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var result = await _http.GetFromJsonAsync<List<User>>("/GetAllUser");
         return result;
     }

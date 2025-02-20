@@ -9,7 +9,7 @@ namespace Authentication.BackendHost.DataBase
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
-        public DbSet<User> Users { get; set; }
+        public DbSet<User> ApplicationUsers { get; set; }
 
     }
 }

@@ -1,0 +1,87 @@
+﻿@using Authentication.Shared.Models
+
+<EditForm Model="@Model" FormName="Login" OnValidSubmit="LoginUser">
+	<div class="login-container">
+		<div class="card login-card shadow-lg p-4">
+			@if (IsLoginPage)
+			{
+				<h3 class="text-center text-primary mb-3">Login</h3>
+			}
+			@if (!IsLoginPage)
+			{
+				<h3 class="text-center text-primary mb-3">Sign Up</h3>
+			}
+
+			@if (!string.IsNullOrEmpty(ErrorMessage))
+			{
+				<div class="alert alert-danger">@ErrorMessage</div>
+			}
+
+			<div class="mb-3">
+				<small >Email</small>
+				<InputText autocomplete="on" type="email" class="form-control" placeholder="Enter your email" @bind-Value="Model.Email" />
+			</div>
+
+			<div class="mb-3 position-relative">
+				<small >Password</small>
+				<InputText autocomplete="on" class="form-control" placeholder="Enter your password" @bind-Value="Model.Password" />
+				<span class="password-toggle" @onclick="TogglePasswordVisibility">
+					<i class="@(isPasswordVisible ? "bi bi-eye-slash" : "bi bi-eye")"></i>
+				</span>
+			</div>
+
+			@if (IsLoginPage)
+			{
+				<button class="btn btn-primary w-100">Login</button>
+			}
+			@if (!IsLoginPage)
+			{
+				<button class="btn btn-primary w-100">Sign Up</button>
+			}
+
+			@if (IsLoginPage)
+			{
+				<div class="text-center mt-3">
+					<small>Don't have an account? <a href="/register" class="text-primary">Sign Up</a></small>
+				</div>
+			}
+
+			@if (!IsLoginPage)
+			{
+				<div class="text-center mt-3">
+					<small>Already have a account? <a href="/" class="text-primary">Sign In</a></small>
+				</div>
+			}
+		</div>
+	</div>
+</EditForm>
+
+@code {
+
+	[Parameter]
+	public string ErrorMessage { get; set; }
+
+	[Parameter]
+	public EventCallback<User> OutModel { get; set; }
+
+	[Parameter]
+	public User Model { get; set; } = new();
+
+	[Parameter]
+	public bool IsLoginPage { get; set; } = true;
+
+
+	private bool isPasswordVisible = false;
+
+	private string passwordInputType => isPasswordVisible ? "text" : "password";
+
+	private void TogglePasswordVisibility()
+	{
+		isPasswordVisible = !isPasswordVisible;
+	}
+
+	void LoginUser()
+	{
+		OutModel.InvokeAsync(Model);
+	}
+}

@@ -1,45 +1,42 @@
 ﻿@page "/register"
-@* @layout BlankLayout
- *@
+@layout BlankLayout
+
 @using Authentication.Shared.Models
 @using Authentication.WebHost.Client.Layout
 
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
-<h3>Register</h3>
 
-@if (errorMessage != null)
-{
-	<p style="color:red">@errorMessage</p>
-}
+<LodinTemplate IsLoginPage="false" ErrorMessage="@errorMessage" OutModel="@RegisterUser" />
 
-<input @bind="email" placeholder="Email" />
-<input @bind="password" placeholder="Password" />
-<button @onclick="RegisterUser">Register</button>
+<Loader IsLoading="@isLoading" />
+
+
 
 @code {
-	private string email;
-	private string password;
+	private bool isLoading = false;
 	private string errorMessage;
 
-	private async Task RegisterUser()
+	private async Task RegisterUser(User obj)
 	{
+		isLoading = true;
 		User user = new()
 			{
-				Email = email,
-				Password = password,
-				Name = email,
+				Email = obj.Email,
+				Password = obj.Password,
+				UserName = obj.Email,
 			};
 
 		bool success = await AuthService.Register(user);
 		if (success)
 		{
-			Navigation.NavigateTo("/login"); // Redirect to dashboard after login
+			Navigation.NavigateTo("/home");
 		}
 		else
 		{
 			errorMessage = "Invalid credentials!";
 		}
+		isLoading = false;
 	}
 }

@@ -15,34 +15,19 @@ namespace Authentication.WebHost.Client.Pages
         [Inject]
         AuthenticationStateProvider AuthStateProvider { get; set; }
 
-        public string email;
-        public string password;
         public string errorMessage;
-
-        private bool isPasswordVisible = false;
-
-        private string passwordInputType => isPasswordVisible ? "text" : "password";
-
+        
         private bool isLoading = false;
 
-        
-
-
-        private void TogglePasswordVisibility()
-        {
-            isPasswordVisible = !isPasswordVisible;
-        }
-
-
-        public async Task LoginUser()
+        public async Task LoginUser(User obj)
         {
             isLoading = true;
 
             User user = new()
             {
-                Email = email,
-                Password = password,
-                Name = email,
+                Email = obj.Email,
+                Password = obj.Password,
+                UserName = obj.Email,
             };
 
             string token = await AuthService.Login(user);
@@ -54,7 +39,7 @@ namespace Authentication.WebHost.Client.Pages
                     customAuthProvider.NotifyUserAuthentication(token, user.Email);
                 }
 
-                Navigation.NavigateTo("/weather"); // Redirect to dashboard after login
+                Navigation.NavigateTo("/home"); // Redirect to dashboard after login
             }
             else
             {

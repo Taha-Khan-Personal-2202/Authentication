@@ -4,58 +4,64 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @attribute [Authorize]
 
-<PageTitle>User</PageTitle>
-
-<button @onclick="LogoutUser">Logout</button>
-
-<h1>User</h1>
-
-
 <AuthorizeView>
 	<Authorized>
-		<h3>Welcome, you are logged in!</h3>
+
+		<EditForm Model="@Model" Context="userAdd" FormName="UserAdd" OnValidSubmit="Submit">
+
+			<div class="card flex flex-row gap-3 justify-content-center mb-5 p-2" style="align-items:center">
+				<div>
+					<small >Email</small>
+					<InputText autocomplete="on" type="email" class="form-control" placeholder="Enter your email" @bind-Value="Model.Email" />
+				</div>
+
+				<div>
+					<small >Password</small>
+					<InputText class="form-control" placeholder="Enter your password" @bind-Value="Model.Password" />
+				</div>
+
+				<div class="align-self-end">
+					<button class="btn btn-primary ">@textLabel</button>
+				</div>
+			</div>
+
+		</EditForm>
+
+		@if (Users == null)
+		{
+			<p><em>Loading...</em></p>
+		}
+		else
+		{
+			<small>Count : @Users.Count()</small>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Email</th>
+						<th>Password</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var user in Users)
+					{
+						<tr>
+							<td>@user.UserName</td>
+							<td>@user.Email</td>
+							@* <td>@user.Password.Substring(0, 10)..</td> *@
+							<td @onclick="() => GetByEmailId(user.Email)">Edit</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+
+		<Loader IsLoading="@isLoading"></Loader>
+
 	</Authorized>
 	<NotAuthorized>
-		<h3>You are not authorized to view this content.</h3>
-		<a href="/login">Login</a>
+		<h3>You have logged out!</h3>
 	</NotAuthorized>
 </AuthorizeView>
 
-
-<AuthorizeView Roles="Admin">
-	<Authorized>
-		<h3>Admin Dashboard</h3>
-	</Authorized>
-</AuthorizeView>
-
-<p>This component demonstrates showing data.</p>
-
-@if (Users == null)
-{
-	<p><em>Loading...</em></p>
-}
-else
-{
-	<table class="table">
-		<thead>
-			<tr>
-				<th>Name</th>
-				<th>Email</th>
-				<th>Password</th>
-			</tr>
-		</thead>
-		<tbody>
-			@foreach (var user in Users)
-			{
-				<tr>
-					<td>@user.Name</td>
-					<td>@user.Email</td>
-					<td>@user.Password</td>
-				</tr>
-			}
-		</tbody>
-	</table>
-}
-
-
- 
