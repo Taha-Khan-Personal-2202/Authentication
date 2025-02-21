@@ -1,4 +1,5 @@
-﻿using Authentication.Shared.Models;
+﻿using Authentication.Shared.Model;
+using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -19,11 +20,11 @@ namespace Authentication.WebHost.Client.Pages
         
         private bool isLoading = false;
 
-        public async Task LoginUser(User obj)
+        public async Task LoginUser(UserViewModel obj)
         {
             isLoading = true;
 
-            User user = new()
+            UserViewModel user = new()
             {
                 Email = obj.Email,
                 Password = obj.Password,

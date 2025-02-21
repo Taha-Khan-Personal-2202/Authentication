@@ -1,7 +1,20 @@
 ﻿@page "/home"
 @using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
 
 <PageTitle>Home</PageTitle>
+
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Welcome, @context.User.Identity?.Name!</h1>
+    </Authorized>
+    <NotAuthorized>
+        <h1>Welcome, Guest!</h1>
+    </NotAuthorized>
+</AuthorizeView>
+
 
 <AuthorizeView>
     <Authorized>

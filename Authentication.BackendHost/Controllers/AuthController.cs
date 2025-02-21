@@ -1,5 +1,6 @@
 ﻿using Authentication.BackendHost.CustomServices;
 using Authentication.BackendHost.DataBase;
+using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,16 +14,19 @@ namespace Authentication.BackendHost.Controllers
     public class AuthController : ControllerBase
     {
         public JwtService JwtService { get; }
-        public UserManager<IdentityUser> UserManager { get; }
-        public SignInManager<IdentityUser> SignInManager { get; set; }
+        public UserManager<User> UserManager { get; }
+        public SignInManager<User> SignInManager { get; set; }
         public ApplicationDbContext ApplicationDb { get; }
 
-        public AuthController(JwtService jwtService, UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signInManager, ApplicationDbContext applicationDb)
+        public RoleManager<IdentityRole> RoleManager { get; set; }
+
+        public AuthController(JwtService jwtService, UserManager<User> userManager, SignInManager<User> signInManager, ApplicationDbContext applicationDb, RoleManager<IdentityRole> roleManager)
         {
             JwtService = jwtService;
             UserManager = userManager;
             SignInManager = signInManager;
             ApplicationDb = applicationDb;
+            RoleManager = roleManager;
         }
 
         //[Authorize]
@@ -30,14 +34,23 @@ namespace Authentication.BackendHost.Controllers
         public async Task<IActionResult> GetAllUser()
         {
             var users = await ApplicationDb.Users.ToListAsync();
-            var result = users.Select(user => new User
+
+            var result = new List<UserViewModel>();
+
+            foreach (var user in users)
             {
-                UserName = user.Email,
-                Email = user.Email,
-            });
-            
+                var roles = await UserManager.GetRolesAsync(user); 
+                result.Add(new UserViewModel
+                {
+                    UserName = user.Email,
+                    Email = user.Email,
+                    Role = roles 
+                });
+            }
+
             return Ok(result);
         }
+
 
         [HttpGet("/GetByEmail/{email}")]
         public async Task<IActionResult> GetByEmailId(string email)
@@ -45,11 +58,14 @@ namespace Authentication.BackendHost.Controllers
             var ExistUser = await UserManager.FindByEmailAsync(email);
             if (ExistUser == null) return BadRequest("Not Found.");
 
-            var obj = new User()
+            var roles = await UserManager.GetRolesAsync(ExistUser);
+
+            var obj = new UserViewModel()
             {
                 UserId = ExistUser.Id,
                 UserName = ExistUser.Email,
                 Email = ExistUser.Email,
+                Role = roles.FirstOrDefault() ?? string.Empty
             };
 
             return Ok(obj);
@@ -57,11 +73,11 @@ namespace Authentication.BackendHost.Controllers
 
 
         [HttpPost("/register")]
-        public async Task<IActionResult> Register([FromBody] User user)
+        public async Task<IActionResult> Register([FromBody] UserViewModel user)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var identityUser = new IdentityUser { UserName = user.Email, Email = user.Email };
+            var identityUser = new User { UserName = user.Email, Email = user.Email };
             var result = await UserManager.CreateAsync(identityUser, user.Password);
 
             if (result.Succeeded) return Ok(result);
@@ -70,7 +86,7 @@ namespace Authentication.BackendHost.Controllers
         }
 
         [HttpPost("/login")]
-        public async Task<IActionResult> Login([FromBody] User user)
+        public async Task<IActionResult> Login([FromBody] UserViewModel user)
         {
             var AddedUser = await UserManager.FindByEmailAsync(user.Email);
             if (AddedUser == null) return BadRequest("Invalid User Name Or Password.");
@@ -83,18 +99,28 @@ namespace Authentication.BackendHost.Controllers
         }
 
         [HttpPost("/add")]
-        public async Task<IActionResult> AddUser([FromBody] User user)
+        public async Task<IActionResult> AddUser([FromBody] UserViewModel user)
         {
-            var identityUser = new IdentityUser { UserName = user.Email, Email = user.Email };
+            var identityUser = new User { UserName = user.Email, Email = user.Email };
+
             var result = await UserManager.CreateAsync(identityUser, user.Password);
+            if (!result.Succeeded) return Ok(result.Errors.FirstOrDefault()?.Description);
 
-            if (result.Succeeded) return Ok(result);
+            if (!string.IsNullOrEmpty(user.Role))
+            {
+                var roleExist = await RoleManager.RoleExistsAsync(user.Role);
+                if (!roleExist)
+                {
+                    await RoleManager.CreateAsync(new IdentityRole(user.Role));
+                }
+                await UserManager.AddToRoleAsync(identityUser, user.Role);
+            }
 
-            return BadRequest(result.Errors.FirstOrDefault()?.Description);
+            return Ok(result);
         }
 
         [HttpPut("/update")]
-        public async Task<IActionResult> UpdateUser([FromBody] User user)
+        public async Task<IActionResult> UpdateUser([FromBody] UserViewModel user)
         {
             var existingUser = await UserManager.FindByIdAsync(user.UserId);
             if (existingUser == null) return NotFound("User not found.");
@@ -102,10 +128,28 @@ namespace Authentication.BackendHost.Controllers
             existingUser.UserName = user.Email;
             existingUser.Email = user.Email;
 
-            var result = await UserManager.UpdateAsync(existingUser);
-            if (result.Succeeded) return Ok(result);
 
-            return BadRequest(result.Errors.FirstOrDefault()?.Description);
+            var result = await UserManager.UpdateAsync(existingUser);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors.First().Description);
+
+            if (!string.IsNullOrEmpty(user.ConfirmedPassword))
+            {
+                var changePassword = await UserManager.ChangePasswordAsync(existingUser, user.Password, user.ConfirmedPassword);
+                if (changePassword.Succeeded) return Ok(changePassword);
+            }
+
+            if (!string.IsNullOrEmpty(user.Role))
+            {
+                var roleExist = await RoleManager.RoleExistsAsync(user.Role);
+                if (!roleExist)
+                {
+                    await RoleManager.CreateAsync(new IdentityRole(user.Role));
+                }
+                await UserManager.AddToRoleAsync(existingUser, user.Role);
+            }
+
+            return Ok(result);
         }
 
 

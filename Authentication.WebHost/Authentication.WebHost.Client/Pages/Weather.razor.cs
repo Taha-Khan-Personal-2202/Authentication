@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -14,14 +15,14 @@ namespace Authentication.WebHost.Client.Pages
         [Inject]
         AuthenticationStateProvider AuthStateProvider { get; set; }
 
-        public User Model { get; set; } = new();
+        public UserViewModel Model { get; set; } = new();
 
-        public List<User> Users { get; set; }
+        public List<UserViewModel> Users { get; set; }
 
         public bool isLoading = false;
 
-        public string textLabel = "Add";
-
+        bool isOpenModal = false;
+        string selectedEmail = string.Empty;
         protected override async void OnAfterRender(bool firstRender)
         {
             if (firstRender)
@@ -37,49 +38,11 @@ namespace Authentication.WebHost.Client.Pages
 
         }
 
-        async Task Submit()
+        void OpenAddEditModal(string email)
         {
-            if (textLabel == "Add")
-            {
-                await Add();
-            }
-            else
-            {
-                await Update();
-            }
+            selectedEmail = email;
+            isOpenModal = !isOpenModal;
         }
-
-        async Task Add()
-        {
-            isLoading = true;
-            var isAdded = await AuthService.Register(Model);
-            if (isAdded)
-            {
-                await GetAllUsers();
-            }
-            isLoading = false;
-            StateHasChanged();
-        }
-
-        async Task Update()
-        {
-            isLoading = true;
-            var isAdded = await AuthService.Update(Model);
-            if (isAdded)
-            {
-                await GetAllUsers();
-            }
-            isLoading = false;
-            StateHasChanged();
-        }
-
-        async Task GetByEmailId(string email)
-        {
-            var obj = await AuthService.GetByEmail(email);
-            Model = obj;
-            textLabel = "Update";
-            StateHasChanged();
-        }
-
+        
     }
 }

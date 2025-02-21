@@ -7,26 +7,6 @@
 <AuthorizeView>
 	<Authorized>
 
-		<EditForm Model="@Model" Context="userAdd" FormName="UserAdd" OnValidSubmit="Submit">
-
-			<div class="card flex flex-row gap-3 justify-content-center mb-5 p-2" style="align-items:center">
-				<div>
-					<small >Email</small>
-					<InputText autocomplete="on" type="email" class="form-control" placeholder="Enter your email" @bind-Value="Model.Email" />
-				</div>
-
-				<div>
-					<small >Password</small>
-					<InputText class="form-control" placeholder="Enter your password" @bind-Value="Model.Password" />
-				</div>
-
-				<div class="align-self-end">
-					<button class="btn btn-primary ">@textLabel</button>
-				</div>
-			</div>
-
-		</EditForm>
-
 		@if (Users == null)
 		{
 			<p><em>Loading...</em></p>
@@ -50,7 +30,7 @@
 							<td>@user.UserName</td>
 							<td>@user.Email</td>
 							@* <td>@user.Password.Substring(0, 10)..</td> *@
-							<td @onclick="() => GetByEmailId(user.Email)">Edit</td>
+							<td @onclick="() => OpenAddEditModal(user.Email)">Edit</td>
 						</tr>
 					}
 				</tbody>
@@ -58,6 +38,11 @@
 		}
 
 		<Loader IsLoading="@isLoading"></Loader>
+
+		@if (isOpenModal)
+		{
+			<UserAddEditModal Email="@selectedEmail" IsClosed="() => isOpenModal =false" />
+		}
 
 	</Authorized>
 	<NotAuthorized>

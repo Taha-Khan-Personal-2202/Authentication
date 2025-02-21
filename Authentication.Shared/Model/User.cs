@@ -1,15 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
 
 namespace Authentication.Shared.Models
 {
-    public class User
-    {
-        public int Id { get; set; }
-        public string? UserName { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-
-        [NotMapped]
-        public string? UserId { get; set; } = string.Empty; 
+    public class User : IdentityUser
+    {        
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 }

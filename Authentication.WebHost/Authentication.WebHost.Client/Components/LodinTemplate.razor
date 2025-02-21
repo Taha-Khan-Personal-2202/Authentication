@@ -1,4 +1,5 @@
-﻿@using Authentication.Shared.Models
+﻿@using Authentication.Shared.Model
+@using Authentication.Shared.Models
 
 <EditForm Model="@Model" FormName="Login" OnValidSubmit="LoginUser">
 	<div class="login-container">
@@ -62,10 +63,10 @@
 	public string ErrorMessage { get; set; }
 
 	[Parameter]
-	public EventCallback<User> OutModel { get; set; }
+	public EventCallback<UserViewModel> OutModel { get; set; }
 
 	[Parameter]
-	public User Model { get; set; } = new();
+	public UserViewModel Model { get; set; } = new();
 
 	[Parameter]
 	public bool IsLoginPage { get; set; } = true;

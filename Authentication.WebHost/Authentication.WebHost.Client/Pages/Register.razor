@@ -1,6 +1,7 @@
 ﻿@page "/register"
 @layout BlankLayout
 
+@using Authentication.Shared.Model
 @using Authentication.Shared.Models
 @using Authentication.WebHost.Client.Layout
 
@@ -18,10 +19,10 @@
 	private bool isLoading = false;
 	private string errorMessage;
 
-	private async Task RegisterUser(User obj)
+	private async Task RegisterUser(UserViewModel obj)
 	{
 		isLoading = true;
-		User user = new()
+		UserViewModel user = new()
 			{
 				Email = obj.Email,
 				Password = obj.Password,

@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.JSInterop;
 
@@ -15,20 +16,19 @@ public class AuthService
     }
 
     // REGISTER / ADD (BOTH SAME)
-    public async Task<bool> Register(User user)
+    public async Task<bool> Register(UserViewModel user)
     {
         var response = await _http.PostAsJsonAsync("/register", user);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> Update(User user)
+    public async Task<bool> Update(UserViewModel user)
     {
-        user.Password = string.Empty;
         var response = await _http.PutAsJsonAsync("/update", user);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<string> Login(User user)
+    public async Task<string> Login(UserViewModel user)
     {
         var response = await _http.PostAsJsonAsync("/login", user);
 
@@ -41,9 +41,9 @@ public class AuthService
         return string.Empty;
     }
 
-    public async Task<User> GetByEmail(string email)
+    public async Task<UserViewModel> GetByEmail(string email)
     {
-        var result = await _http.GetFromJsonAsync<User>($"/GetByEmail/{email}");
+        var result = await _http.GetFromJsonAsync<UserViewModel>($"/GetByEmail/{email}");
         return result;
     }
 
@@ -56,13 +56,13 @@ public class AuthService
     {
         return await _js.InvokeAsync<string>("localStorage.getItem", "token") ?? "";
     }
-        
-    public async Task<List<User>> GeAllUesr()
+
+    public async Task<List<UserViewModel>> GeAllUesr()
     {
-        //var token = await GetToken();
+        var token = await GetToken();
         //_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        //var result = await _http.GetFromJsonAsync<List<User>>("api/Auth/GetAllUser");
-        var result = await _http.GetFromJsonAsync<List<User>>("GetAllUser");
+
+        var result = await _http.GetFromJsonAsync<List<UserViewModel>>("api/Auth/GetAllUser");
         return result;
     }
 }

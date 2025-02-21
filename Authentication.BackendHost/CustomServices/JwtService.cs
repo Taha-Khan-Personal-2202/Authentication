@@ -28,14 +28,15 @@ namespace Authentication.BackendHost.CustomServices
             //  new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) Unique token ID
             var key = new SymmetricSecurityKey(secretKey);
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
+    
             var token = new JwtSecurityToken(
                 issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
+                audience: jwtSettings["Audience"], // Now properly set
                 claims: claims,
                 expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpirationMinutes"])),
                 signingCredentials: credentials
             );
+
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
