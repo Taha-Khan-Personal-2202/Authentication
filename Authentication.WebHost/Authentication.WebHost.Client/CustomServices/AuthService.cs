@@ -1,7 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Authentication.Shared.Model;
-using Authentication.Shared.Models;
 using Microsoft.JSInterop;
 
 public class AuthService
@@ -21,6 +20,13 @@ public class AuthService
         var response = await _http.PostAsJsonAsync("/register", user);
         return response.IsSuccessStatusCode;
     }
+    
+    public async Task<bool> Add(UserViewModel user)
+    {
+        var response = await _http.PostAsJsonAsync("/add", user);
+        return response.IsSuccessStatusCode;
+    }
+
 
     public async Task<bool> Update(UserViewModel user)
     {
@@ -28,17 +34,17 @@ public class AuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<string> Login(UserViewModel user)
+    public async Task<UserViewModel> Login(UserViewModel user)
     {
         var response = await _http.PostAsJsonAsync("/login", user);
 
         if (response.IsSuccessStatusCode)
         {
-            var result = await response.Content.ReadAsStringAsync();
-            await _js.InvokeVoidAsync("localStorage.setItem", "token", result); // Store JWT in localStorage
+            var result = await response.Content.ReadFromJsonAsync<UserViewModel>();
+            await _js.InvokeVoidAsync("localStorage.setItem", "token", result.token); // Store JWT in localStorage
             return result;
         }
-        return string.Empty;
+        return null;
     }
 
     public async Task<UserViewModel> GetByEmail(string email)
@@ -60,8 +66,7 @@ public class AuthService
     public async Task<List<UserViewModel>> GeAllUesr()
     {
         var token = await GetToken();
-        //_http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var result = await _http.GetFromJsonAsync<List<UserViewModel>>("api/Auth/GetAllUser");
         return result;
     }

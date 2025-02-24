@@ -14,16 +14,25 @@ namespace Authentication.BackendHost.CustomServices
             _configuration = configuration;
         }
 
-        public string GenerateToken(string userName, string role)
+        public string GenerateToken(string userId, string userName, string role, List<string>? permissions)
         {
             var jwtSettings = _configuration.GetSection("JwtSetting");
             var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"]);
 
-            var claims = new[]
+
+            var claims = new List<Claim>()
             {
-                new Claim(JwtRegisteredClaimNames.Sub, userName),
-                new Claim(ClaimTypes.Role, role),
+                new Claim(JwtRegisteredClaimNames.Sub, userId),
+                new Claim(ClaimTypes.Email, userName),
+                new Claim(ClaimTypes.Role, role)
             };
+
+
+            // Add permissions as claims
+            foreach (var permission in permissions)
+            {
+                claims.Add(new Claim("Permission", permission));
+            }
 
             //  new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) Unique token ID
             var key = new SymmetricSecurityKey(secretKey);

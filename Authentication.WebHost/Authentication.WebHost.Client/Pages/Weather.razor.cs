@@ -17,7 +17,7 @@ namespace Authentication.WebHost.Client.Pages
 
         public UserViewModel Model { get; set; } = new();
 
-        public List<UserViewModel> Users { get; set; }
+        public List<UserViewModel> Users { get; set; } = new();
 
         public bool isLoading = false;
 
@@ -27,6 +27,7 @@ namespace Authentication.WebHost.Client.Pages
         {
             if (firstRender)
             {
+                await CheckClaims();
                 await GetAllUsers();
             }
         }
@@ -43,6 +44,19 @@ namespace Authentication.WebHost.Client.Pages
             selectedEmail = email;
             isOpenModal = !isOpenModal;
         }
-        
+
+
+        private async Task CheckClaims()
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            Console.WriteLine("User Claims:");
+            foreach (var claim in user.Claims)
+            {
+                Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
+            }
+        }
+
     }
 }

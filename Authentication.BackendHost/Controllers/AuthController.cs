@@ -29,22 +29,27 @@ namespace Authentication.BackendHost.Controllers
             RoleManager = roleManager;
         }
 
-        //[Authorize]
+        [Authorize]
+        [Authorize(Policy = Permission.ManageUser)]
         [HttpGet("GetAllUser")]
         public async Task<IActionResult> GetAllUser()
         {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            Console.WriteLine($"🔍 Incoming Token: {authHeader}");
+
+
             var users = await ApplicationDb.Users.ToListAsync();
 
             var result = new List<UserViewModel>();
 
             foreach (var user in users)
             {
-                var roles = await UserManager.GetRolesAsync(user); 
+                var roles = await UserManager.GetRolesAsync(user);
                 result.Add(new UserViewModel
                 {
                     UserName = user.Email,
                     Email = user.Email,
-                    Role = roles 
+                    Role = roles != null && roles.Any() ? roles.FirstOrDefault()?.ToString()! : string.Empty,
                 });
             }
 
@@ -75,14 +80,22 @@ namespace Authentication.BackendHost.Controllers
         [HttpPost("/register")]
         public async Task<IActionResult> Register([FromBody] UserViewModel user)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
             var identityUser = new User { UserName = user.Email, Email = user.Email };
+
             var result = await UserManager.CreateAsync(identityUser, user.Password);
+            if (!result.Succeeded) return Ok(result.Errors.FirstOrDefault()?.Description);
 
-            if (result.Succeeded) return Ok(result);
+            if (!string.IsNullOrEmpty(user.Role))
+            {
+                var roleExist = await RoleManager.RoleExistsAsync(user.Role);
+                if (!roleExist)
+                {
+                    await RoleManager.CreateAsync(new IdentityRole(user.Role));
+                }
+                await UserManager.AddToRoleAsync(identityUser, user.Role);
+            }
 
-            return BadRequest(result.Errors.FirstOrDefault()?.Description);
+            return Ok(result);
         }
 
         [HttpPost("/login")]
@@ -94,8 +107,22 @@ namespace Authentication.BackendHost.Controllers
             var result = await SignInManager.CheckPasswordSignInAsync(AddedUser, user.Password, false);
             if (!result.Succeeded) return Unauthorized("Invalid User Name Or Password.");
 
-            var token = JwtService.GenerateToken(AddedUser.UserName, "Admin");
-            return Ok(token);
+            var role = await UserManager.GetRolesAsync(AddedUser);
+            if (role == null || !role.Any()) return Unauthorized("Role is not selected please select a role to login");
+
+            // Step 2: Get User Permissions
+            var userClaims = await UserManager.GetClaimsAsync(AddedUser);
+            var permissions = userClaims
+                .Where(c => c.Type == "Permission")
+                .Select(c => c.Value)
+                .ToList();
+
+            var token = JwtService.GenerateToken(AddedUser.Id, AddedUser.UserName, role.FirstOrDefault(), permissions);
+
+            user.Role = role.FirstOrDefault();
+            user.token = token;
+            user.Permissions = permissions;
+            return Ok(user);
         }
 
         [HttpPost("/add")]
@@ -114,6 +141,14 @@ namespace Authentication.BackendHost.Controllers
                     await RoleManager.CreateAsync(new IdentityRole(user.Role));
                 }
                 await UserManager.AddToRoleAsync(identityUser, user.Role);
+
+                if (RolePermissions.RolePermissionMaping.ContainsKey(user.Role))
+                {
+                    foreach (var permission in RolePermissions.RolePermissionMaping[user.Role])
+                    {
+                        await UserManager.AddClaimAsync(identityUser, new System.Security.Claims.Claim("Permission", permission));
+                    }
+                }
             }
 
             return Ok(result);
@@ -136,7 +171,7 @@ namespace Authentication.BackendHost.Controllers
             if (!string.IsNullOrEmpty(user.ConfirmedPassword))
             {
                 var changePassword = await UserManager.ChangePasswordAsync(existingUser, user.Password, user.ConfirmedPassword);
-                if (changePassword.Succeeded) return Ok(changePassword);
+                if (!changePassword.Succeeded) return Ok(result.Errors.First().Description);
             }
 
             if (!string.IsNullOrEmpty(user.Role))

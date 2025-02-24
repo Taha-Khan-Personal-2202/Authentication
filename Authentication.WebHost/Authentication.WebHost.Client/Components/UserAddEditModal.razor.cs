@@ -54,7 +54,7 @@ namespace Authentication.WebHost.Client.Components
         async Task Add()
         {
             isLoading = true;
-            var isAdded = await AuthService.Register(EditModel);
+            var isAdded = await AuthService.Add(EditModel);
             if (isAdded)
             {
                 CloseModal();

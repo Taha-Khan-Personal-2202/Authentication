@@ -1,7 +1,9 @@
 using Authentication.BackendHost.CustomServices;
 using Authentication.BackendHost.DataBase;
+using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -45,12 +47,53 @@ builder.Services.AddAuthentication(options =>
             ClockSkew = TimeSpan.Zero // No delay in expiration
         };
 
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+                Console.WriteLine($"Received Token: {token}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine("Token is Validated Successfully.");
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            }
+        };
+
+
     });
 ;
 
 // Add services to the container.
-builder.Services.AddScoped<JwtService>();
-builder.Services.AddAuthorization();
+builder.Services.AddSingleton<JwtService>();
+
+// Register Custom Policy Provider
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
+
+// Ensure Authorization Policies Are Configured
+builder.Services.AddAuthorization(options =>
+{
+    Console.WriteLine("Registering policies dynamically...");
+    foreach (var role in RolePermissions.RolePermissionMaping)
+    {
+        foreach (var permission in role.Value)
+        {
+            Console.WriteLine($"Adding policy: {permission}");
+            options.AddPolicy(permission, policy =>
+                policy.Requirements.Add(new PermissionRequirement(permission)));
+        }
+    }
+});
+
+
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

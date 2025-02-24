@@ -27,6 +27,7 @@
 				Email = obj.Email,
 				Password = obj.Password,
 				UserName = obj.Email,
+				Role = "Online User"
 			};
 
 		bool success = await AuthService.Register(user);

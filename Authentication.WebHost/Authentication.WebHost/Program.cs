@@ -1,5 +1,4 @@
 using System.Text;
-using Authentication.WebHost.Client.Pages;
 using Authentication.WebHost.Components;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -45,8 +44,9 @@ builder.Services.AddAuthentication(options =>
         };
 
     });
-;
+
 builder.Services.AddAuthorization();
+builder.Services.AddAuthorizationCore();
 
 var app = builder.Build();
 
@@ -61,6 +61,9 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+app.UseAuthentication(); // Must come before authorization
+app.UseAuthorization();
+
 
 app.UseHttpsRedirection();
 

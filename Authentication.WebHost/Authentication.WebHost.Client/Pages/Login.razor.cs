@@ -17,7 +17,7 @@ namespace Authentication.WebHost.Client.Pages
         AuthenticationStateProvider AuthStateProvider { get; set; }
 
         public string errorMessage;
-        
+
         private bool isLoading = false;
 
         public async Task LoginUser(UserViewModel obj)
@@ -29,15 +29,16 @@ namespace Authentication.WebHost.Client.Pages
                 Email = obj.Email,
                 Password = obj.Password,
                 UserName = obj.Email,
+                Role = obj.Role,
             };
 
-            string token = await AuthService.Login(user);
-            if (!string.IsNullOrEmpty(token))
+            UserViewModel apiObject = await AuthService.Login(user);
+            if (apiObject != null && !string.IsNullOrEmpty(apiObject.token))
             {
                 // Cast to CustomAuthStateProvider before calling NotifyUserAuthentication
                 if (AuthStateProvider is CustomAuthStateProvider customAuthProvider)
                 {
-                    customAuthProvider.NotifyUserAuthentication(token, user.Email);
+                    customAuthProvider.NotifyUserAuthentication(apiObject.token, apiObject.Email, apiObject.Role, apiObject.Permissions);
                 }
 
                 Navigation.NavigateTo("/home"); // Redirect to dashboard after login

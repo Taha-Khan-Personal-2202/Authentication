@@ -7,23 +7,23 @@
 
 
 <AuthorizeView>
-    <Authorized>
-        <h1>Welcome, @context.User.Identity?.Name!</h1>
-    </Authorized>
-    <NotAuthorized>
-        <h1>Welcome, Guest!</h1>
-    </NotAuthorized>
+	<Authorized>
+		<h1>Welcome, @context.User.Identity?.Name!</h1>
+	</Authorized>
+	<NotAuthorized>
+		<h1>Welcome, Guest!</h1>
+	</NotAuthorized>
 </AuthorizeView>
 
 
 <AuthorizeView>
-    <Authorized>
-        <h3>Welcome, you are logged in!</h3>
-    </Authorized>
-    <NotAuthorized>
-        <h3>You are not authorized to view this content.</h3>
-        <a href="/login">Login</a>
-    </NotAuthorized>
+	<Authorized>
+		<h3>Welcome, you are logged in!</h3>
+	</Authorized>
+	<NotAuthorized>
+		<h3>You are not authorized to view this content.</h3>
+		<a href="/login">Login</a>
+	</NotAuthorized>
 </AuthorizeView>
 
 
@@ -32,3 +32,33 @@
 		<h3>Admin Dashboard</h3>
 	</Authorized>
 </AuthorizeView>
+
+<AuthorizeView Roles="Online User">
+	<Authorized>
+		<h3>Welcome! Your are a Online User</h3>
+	</Authorized>
+</AuthorizeView>
+
+
+@code {
+	protected override async void OnAfterRender(bool firstRender)
+	{
+		if (firstRender)
+		{
+			await CheckClaims();
+		}
+		base.OnAfterRender(firstRender);
+	}
+
+	private async Task CheckClaims()
+	{
+		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+		var user = authState.User;
+
+		Console.WriteLine("User Claims:");
+		foreach (var claim in user.Claims)
+		{
+			Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
+		}
+	}
+}
