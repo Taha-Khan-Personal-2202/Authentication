@@ -1,5 +1,7 @@
 using System.Text;
+using Authentication.Shared.Model;
 using Authentication.WebHost.Components;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
@@ -45,8 +47,20 @@ builder.Services.AddAuthentication(options =>
 
     });
 
-builder.Services.AddAuthorization();
-builder.Services.AddAuthorizationCore();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie();
+
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var role in RolePermissions.RolePermissionMaping)
+    {
+        foreach (var permission in role.Value)
+        {
+            options.AddPolicy(permission, policy =>
+                policy.RequireClaim("Permission", permission));
+        }
+    }
+});
 
 var app = builder.Build();
 
@@ -61,9 +75,6 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-app.UseAuthentication(); // Must come before authorization
-app.UseAuthorization();
-
 
 app.UseHttpsRedirection();
 

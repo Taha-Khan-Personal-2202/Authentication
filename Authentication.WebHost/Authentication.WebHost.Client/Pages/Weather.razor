@@ -5,53 +5,46 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @* @attribute [Authorize]
  *@
-<AuthorizeView  Roles="Admin">
-    <Authorized>
 
-        <h3>User Dashboard</h3>
-        <div class="align-items-md-center d-flex justify-content-between mb-2 mt-5">
-            <p>Count : @Users.Count()</p>
-            <button class="btn btn-primary" @onclick="() => {selectedEmail = string.Empty; isOpenModal = true;}">Add User</button>
-        </div>
 
-        @if (!Users.Any())
-        {
-            <p><em>Loading...</em></p>
-        }
-        else
-        {
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var user in Users)
-                    {
-                        <tr>
-                            <td>@user.UserName</td>
-                            <td>@user.Email</td>
-                            <td>@user.Role</td>
-                            <td @onclick="() => OpenAddEditModal(user.Email)">Edit</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
+<h3>User Dashboard</h3>
+<div class="align-items-md-center d-flex justify-content-between mb-2 mt-5">
+	<p>Count : @Users.Count()</p>
+	<button class="btn btn-primary" @onclick="() => {selectedEmail = string.Empty; isOpenModal = true;}">Add User</button>
+</div>
 
-        <Loader IsLoading="@isLoading"></Loader>
+@if (!Users.Any())
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Name</th>
+				<th>Email</th>
+				<th>Role</th>
+				<th>Action</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var user in Users)
+			{
+				<tr>
+					<td>@user.UserName</td>
+					<td>@user.Email</td>
+					<td>@user.Role</td>
+					<td @onclick="() => OpenAddEditModal(user.Email)">Edit</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}
 
-        @if (isOpenModal)
-        {
-            <UserAddEditModal Email="@selectedEmail" IsClosed="() => isOpenModal =false" />
-        }
+<Loader IsLoading="@isLoading"></Loader>
 
-    </Authorized>
-    <NotAuthorized>
-        <h3>You have logged out!</h3>
-    </NotAuthorized>
-</AuthorizeView>
+@if (isOpenModal)
+{
+	<UserAddEditModal Email="@selectedEmail" IsClosed="() => isOpenModal =false" />
+}

@@ -30,7 +30,7 @@ namespace Authentication.BackendHost.Controllers
         }
 
         [Authorize]
-        [Authorize(Policy = Permission.ManageUser)]
+        //[Authorize(Policy = Permission.ManageUser)]
         [HttpGet("GetAllUser")]
         public async Task<IActionResult> GetAllUser()
         {

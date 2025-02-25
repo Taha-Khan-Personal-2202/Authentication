@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using Authentication.Shared.Model;
 using Authentication.Shared.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -8,6 +9,9 @@ namespace Authentication.WebHost.Client.Pages
 {
     public partial class Weather
     {
+
+        [Inject]
+        IServiceProvider ServiceProvider { get; set; }
 
         [Inject]
         AuthService AuthService { get; set; }
@@ -35,8 +39,8 @@ namespace Authentication.WebHost.Client.Pages
         async Task GetAllUsers()
         {
             Users = await AuthService.GeAllUesr();
+            CheckPolicy();
             StateHasChanged();
-
         }
 
         void OpenAddEditModal(string email)
@@ -56,7 +60,24 @@ namespace Authentication.WebHost.Client.Pages
             {
                 Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
             }
+
+            if (user.HasClaim(c => c.Type == "Permission" && c.Value == "Permissions.ManageUser"))
+            {
+                Console.WriteLine("✅ Permissions.ManageUser claim is present.");
+            }
+            else
+            {
+                Console.WriteLine("❌ Permissions.ManageUser claim is missing.");
+            }
         }
+
+        public bool CheckPolicy()
+        {
+            var policyProvider = ServiceProvider.GetRequiredService<IAuthorizationPolicyProvider>();
+            var policy = policyProvider.GetPolicyAsync(Permission.ManageUser).GetAwaiter().GetResult();
+            return policy != null;
+        }
+
 
     }
 }
