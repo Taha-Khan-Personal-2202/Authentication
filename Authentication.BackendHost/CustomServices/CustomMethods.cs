@@ -49,6 +49,13 @@ namespace Authentication.BackendHost.CustomServices
             {
                 await RoleManager.CreateAsync(new IdentityRole(userViewModel.Role));
             }
+
+            var roles = await GetRoleByIdentityUser(identityUser);
+
+            if (roles != null && roles.Any())
+            {
+                await UserManager.RemoveFromRoleAsync(identityUser, roles); // Remove first role
+            }
             await UserManager.AddToRoleAsync(identityUser, userViewModel.Role);
             return true;
         }

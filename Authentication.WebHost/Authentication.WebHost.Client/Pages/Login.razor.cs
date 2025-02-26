@@ -28,8 +28,6 @@ namespace Authentication.WebHost.Client.Pages
             {
                 Email = obj.Email,
                 Password = obj.Password,
-                FullName = obj.Email,
-                Role = obj.Role,
             };
 
             UserViewModel apiObject = await AuthService.Login(user);
@@ -38,7 +36,7 @@ namespace Authentication.WebHost.Client.Pages
                 // Cast to CustomAuthStateProvider before calling NotifyUserAuthentication
                 if (AuthStateProvider is CustomAuthStateProvider customAuthProvider)
                 {
-                    customAuthProvider.NotifyUserAuthentication(apiObject.token, apiObject.Email, apiObject.Role, apiObject.Permissions);
+                    customAuthProvider.NotifyUserAuthentication(apiObject.token, apiObject.FullName, apiObject.Role, apiObject.Permissions);
                 }
 
                 Navigation.NavigateTo("/home"); // Redirect to dashboard after login

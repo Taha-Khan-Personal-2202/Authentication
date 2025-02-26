@@ -23,7 +23,7 @@ namespace Authentication.BackendHost.CustomServices
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
-                new Claim(ClaimTypes.Email, userName),
+                new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.Role, role)
             };
 

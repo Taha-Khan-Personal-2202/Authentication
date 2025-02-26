@@ -1,64 +1,56 @@
 ﻿@page "/home"
+@using Authentication.Shared.Constants
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 
 <PageTitle>Home</PageTitle>
 
 
-<AuthorizeView>
-	<Authorized>
-		<h1>Welcome, @context.User.Identity?.Name!</h1>
-	</Authorized>
-	<NotAuthorized>
-		<h1>Welcome, Guest!</h1>
-	</NotAuthorized>
-</AuthorizeView>
+<div class="container mt-5 text-center">
+    <h2 class="text-primary">Welcome, @userName</h2>
+    <p class="lead">You are successfully logged in.</p>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card p-4 rounded-3 shadow-sm">
+                <h4 class="text-primary">User Information</h4>
+                <div class="text-start">
+                    <p><strong>Name:</strong> @userName</p>
+                    <p><strong>Role:</strong> @userRole</p>
+                    <p><strong>Permissions:</strong></p>
+                    <ul class="list-group">
+                        @foreach (var permission in permissions)
+                        {
+                            <li class="list-group-item">@permission</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <a class="btn btn-primary btn-lg" href="/dashboard">Go to Dashboard</a>
+    </div>
+</div>
 
-
-<AuthorizeView>
-	<Authorized>
-		<h3>Welcome, you are logged in!</h3>
-	</Authorized>
-	<NotAuthorized>
-		<h3>You are not authorized to view this content.</h3>
-		<a href="/login">Login</a>
-	</NotAuthorized>
-</AuthorizeView>
-
-
-<AuthorizeView Roles="Admin">
-	<Authorized>
-		<h3>Admin Dashboard</h3>
-	</Authorized>
-</AuthorizeView>
-
-<AuthorizeView Roles="Online User">
-	<Authorized>
-		<h3>Welcome! Your are a Online User</h3>
-	</Authorized>
-</AuthorizeView>
 
 
 @code {
-	protected override async void OnAfterRender(bool firstRender)
-	{
-		if (firstRender)
-		{
-			await CheckClaims();
-		}
-		base.OnAfterRender(firstRender);
-	}
+    private string? userName;
+    private string? userRole;
+    private List<string> permissions = new();
 
-	private async Task CheckClaims()
-	{
-		var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-		var user = authState.User;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-		Console.WriteLine("User Claims:");
-		foreach (var claim in user.Claims)
-		{
-			Console.WriteLine($"Type: {claim.Type}, Value: {claim.Value}");
-		}
-	}
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userName = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            userRole = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            permissions = user.Claims.Where(c => c.Type == Constant.PermissionClaimType).Select(c => c.Value).ToList();
+        }
+    }
 }

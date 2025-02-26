@@ -134,6 +134,7 @@ namespace Authentication.BackendHost.Controllers
             // GENERATE JWT TOKEN 
             var token = JwtService.GenerateToken(ExistUser.Id, ExistUser.UserName, role, permissions);
 
+            user.FullName = ExistUser.UserName;
             user.token = token;
             user.Role = role;
             user.Permissions = permissions;

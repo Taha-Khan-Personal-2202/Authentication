@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using Microsoft.JSInterop;
 using System.IdentityModel.Tokens.Jwt;
+using Authentication.Shared.Constants;
 
 
 public class CustomAuthStateProvider : AuthenticationStateProvider
@@ -26,35 +27,26 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
 
         try
         {
-            // Decode JWT if applicable (Optional)
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
 
-            var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value ?? "User"),
-            new Claim(ClaimTypes.Role, jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "User")
-        };
+            var userName = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var role = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
-            // Add Permission Claims if available
-            var permissionClaims = jwtToken.Claims.Where(c => c.Type == "Permission").ToList();
+            var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, userName),
+                    new Claim(ClaimTypes.Role, role)
+                };
+
+            var permissionClaims = jwtToken.Claims.Where(c => c.Type == Constant.PermissionClaimType).ToList();
             if (permissionClaims.Any())
             {
                 claims.AddRange(permissionClaims);
-                foreach (var claim in permissionClaims)
-                {
-                    Console.WriteLine($"✅ Loaded Permission Claim: {claim.Value}");
-                }
-            }
-            else
-            {
-                Console.WriteLine("⚠️ No permission claims found in token.");
             }
 
             var identity = new ClaimsIdentity(claims, "jwt");
             _currentUser = new ClaimsPrincipal(identity);
-            Console.WriteLine("✅ User authenticated successfully!");
-
             return new AuthenticationState(_currentUser);
         }
         catch (Exception ex)
@@ -68,9 +60,9 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     public void NotifyUserAuthentication(string token, string userName, string role, IList<string>? permissions)
     {
         var identity = new ClaimsIdentity(new[] {
-        new Claim(ClaimTypes.Name, userName),
-        new Claim(ClaimTypes.Role, role)
-    }, "jwt");
+                new Claim(ClaimTypes.Name, userName),
+                new Claim(ClaimTypes.Role, role)
+            }, "jwt");
 
         if (permissions != null)
         {
