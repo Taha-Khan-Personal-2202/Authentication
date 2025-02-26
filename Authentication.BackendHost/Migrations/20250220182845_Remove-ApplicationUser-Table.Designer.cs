@@ -84,7 +84,7 @@ namespace Authentication.BackendHost.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("FullName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 

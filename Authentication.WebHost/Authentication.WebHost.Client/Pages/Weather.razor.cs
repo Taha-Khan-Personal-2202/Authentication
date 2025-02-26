@@ -38,7 +38,7 @@ namespace Authentication.WebHost.Client.Pages
 
         async Task GetAllUsers()
         {
-            Users = await AuthService.GeAllUesr();
+            Users = await AuthService.GeAllUser();
             CheckPolicy();
             StateHasChanged();
         }

@@ -1,11 +1,13 @@
 ﻿using Authentication.BackendHost.CustomServices;
 using Authentication.BackendHost.DataBase;
+using Authentication.Shared.Constants;
 using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Authentication.BackendHost.Controllers
 {
@@ -15,85 +17,98 @@ namespace Authentication.BackendHost.Controllers
     {
         public JwtService JwtService { get; }
         public UserManager<User> UserManager { get; }
-        public SignInManager<User> SignInManager { get; set; }
         public ApplicationDbContext ApplicationDb { get; }
+        public CustomMethods CustomMethods { get; }
 
         public RoleManager<IdentityRole> RoleManager { get; set; }
 
-        public AuthController(JwtService jwtService, UserManager<User> userManager, SignInManager<User> signInManager, ApplicationDbContext applicationDb, RoleManager<IdentityRole> roleManager)
+        public AuthController(JwtService jwtService, UserManager<User> userManager, ApplicationDbContext applicationDb, RoleManager<IdentityRole> roleManager, CustomMethods customMethods)
         {
             JwtService = jwtService;
             UserManager = userManager;
-            SignInManager = signInManager;
             ApplicationDb = applicationDb;
             RoleManager = roleManager;
+            CustomMethods = customMethods;
         }
 
-        [Authorize]
-        //[Authorize(Policy = Permission.ManageUser)]
-        [HttpGet("GetAllUser")]
-        public async Task<IActionResult> GetAllUser()
+        [HttpPost("/add")]
+        public async Task<IActionResult> AddUser([FromBody] UserViewModel user)
         {
-            var authHeader = Request.Headers["Authorization"].ToString();
-            Console.WriteLine($"🔍 Incoming Token: {authHeader}");
+            // CREATING IDENTITY
+            var identityUser = new User { UserName = user.FullName, Email = user.Email };
 
+            // CREATING USER
+            var result = await UserManager.CreateAsync(identityUser, user.Password);
+            if (!result.Succeeded) return Ok(result.Errors.FirstOrDefault()?.Description);
 
-            var users = await ApplicationDb.Users.ToListAsync();
-
-            var result = new List<UserViewModel>();
-
-            foreach (var user in users)
+            // ASSIGNING THE ROLE AND PERMISSION
+            if (!string.IsNullOrEmpty(user.Role))
             {
-                var roles = await UserManager.GetRolesAsync(user);
-                result.Add(new UserViewModel
-                {
-                    UserName = user.Email,
-                    Email = user.Email,
-                    Role = roles != null && roles.Any() ? roles.FirstOrDefault()?.ToString()! : string.Empty,
-                });
+                // CHECKING ROLE
+                var isRoleAdded = await CustomMethods.HandlingRoleAddOrUpdate(identityUser, user);
+                if (!isRoleAdded) return BadRequest(Constant.MessageForRole);
+
+                // ASSINGING PERMISSION
+                var isPermissionAdded = await CustomMethods.HandlingPermissionAddOrUpdate(identityUser, user);
+                if (!isPermissionAdded) return BadRequest(Constant.MessageForPermissionError);
+
             }
 
             return Ok(result);
         }
 
-
         [HttpGet("/GetByEmail/{email}")]
         public async Task<IActionResult> GetByEmailId(string email)
         {
-            var ExistUser = await UserManager.FindByEmailAsync(email);
-            if (ExistUser == null) return BadRequest("Not Found.");
+            // GETTING THE EXISTING USER BY EMAIL
+            var ExistUser = await CustomMethods.FindUserByEmail(email);
+            if (ExistUser == null) return BadRequest(Constant.MessageForUserNotFound);
 
-            var roles = await UserManager.GetRolesAsync(ExistUser);
-
-            var obj = new UserViewModel()
+            var ViewModel = new UserViewModel()
             {
                 UserId = ExistUser.Id,
-                UserName = ExistUser.Email,
                 Email = ExistUser.Email,
-                Role = roles.FirstOrDefault() ?? string.Empty
+                FullName = ExistUser.UserName,
+                Role = await CustomMethods.GetRoleByIdentityUser(ExistUser),
+                Permissions = await CustomMethods.GetPermissionByIdentityUser(ExistUser)
             };
 
-            return Ok(obj);
+            return Ok(ViewModel);
         }
 
-
-        [HttpPost("/register")]
-        public async Task<IActionResult> Register([FromBody] UserViewModel user)
+        [HttpPut("/update")]
+        public async Task<IActionResult> UpdateUser([FromBody] UserViewModel userViewModel)
         {
-            var identityUser = new User { UserName = user.Email, Email = user.Email };
+            // GETTING USER BY EMAIL
+            var identityUser = await CustomMethods.FindUserByEmail(userViewModel.Email);
+            if (identityUser == null) return NotFound(Constant.MessageForUserNotFound);
 
-            var result = await UserManager.CreateAsync(identityUser, user.Password);
-            if (!result.Succeeded) return Ok(result.Errors.FirstOrDefault()?.Description);
+            // ASSIGNING NEW VALUES
+            identityUser.UserName = userViewModel.FullName;
+            identityUser.Email = userViewModel.Email;
 
-            if (!string.IsNullOrEmpty(user.Role))
+            // UPDATING USER
+            var result = await UserManager.UpdateAsync(identityUser);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors.First().Description);
+
+            // HANDLING PASSWORD
+            if (!string.IsNullOrEmpty(userViewModel.NewPassword))
             {
-                var roleExist = await RoleManager.RoleExistsAsync(user.Role);
-                if (!roleExist)
-                {
-                    await RoleManager.CreateAsync(new IdentityRole(user.Role));
-                }
-                await UserManager.AddToRoleAsync(identityUser, user.Role);
+                var passwordHasChanged = await CustomMethods.ChangePassword(identityUser, userViewModel);
+                if (!passwordHasChanged) return BadRequest(Constant.MessageForPasswordUpdate);
             }
+
+            // HANDLING ROLE
+            if (!string.IsNullOrEmpty(userViewModel.Role))
+            {
+                var isRoleAdded = await CustomMethods.HandlingRoleAddOrUpdate(identityUser, userViewModel);
+                if (!isRoleAdded) return BadRequest(Constant.MessageForRole);
+            }
+
+            // HANDLING PERMISSIONS
+            var isPermissionUpdated = await CustomMethods.HandlingPermissionAddOrUpdate(identityUser, userViewModel);
+            if (!isPermissionUpdated) return BadRequest(Constant.MessageForPermissionError);
 
             return Ok(result);
         }
@@ -101,87 +116,66 @@ namespace Authentication.BackendHost.Controllers
         [HttpPost("/login")]
         public async Task<IActionResult> Login([FromBody] UserViewModel user)
         {
-            var AddedUser = await UserManager.FindByEmailAsync(user.Email);
-            if (AddedUser == null) return BadRequest("Invalid User Name Or Password.");
+            // CHECKING FOR CURRENT EXIST
+            var ExistUser = await CustomMethods.FindUserByEmail(user.Email);
+            if (ExistUser == null) return BadRequest(Constant.MessageForUserNotFound);
 
-            var result = await SignInManager.CheckPasswordSignInAsync(AddedUser, user.Password, false);
-            if (!result.Succeeded) return Unauthorized("Invalid User Name Or Password.");
+            // CHECKING PASSWORD
+            var (isPasswordCorrect, message) = await CustomMethods.CheckPassword(ExistUser, user);
+            if (!isPasswordCorrect) return BadRequest(message);
 
-            var role = await UserManager.GetRolesAsync(AddedUser);
-            if (role == null || !role.Any()) return Unauthorized("Role is not selected please select a role to login");
+            // CHECKING ROLE
+            var role = await CustomMethods.GetRoleByIdentityUser(ExistUser);
+            if (role == null || !role.Any()) return BadRequest(Constant.MessageForRole);
 
-            // Step 2: Get User Permissions
-            var userClaims = await UserManager.GetClaimsAsync(AddedUser);
-            var permissions = userClaims
-                .Where(c => c.Type == "Permission")
-                .Select(c => c.Value)
-                .ToList();
+            // GETTING PERMISSION
+            var permissions = await CustomMethods.GetPermissionByIdentityUser(ExistUser);
 
-            var token = JwtService.GenerateToken(AddedUser.Id, AddedUser.UserName, role.FirstOrDefault(), permissions);
+            // GENERATE JWT TOKEN 
+            var token = JwtService.GenerateToken(ExistUser.Id, ExistUser.UserName, role, permissions);
 
-            user.Role = role.FirstOrDefault();
             user.token = token;
+            user.Role = role;
             user.Permissions = permissions;
+
             return Ok(user);
         }
 
-        [HttpPost("/add")]
-        public async Task<IActionResult> AddUser([FromBody] UserViewModel user)
-        {
-            var identityUser = new User { UserName = user.Email, Email = user.Email };
 
+        [HttpPost("/register")]
+        public async Task<IActionResult> Register([FromBody] UserViewModel user)
+        {
+            // CREATING IDENTITY
+            var identityUser = new User { UserName = user.FullName, Email = user.Email };
+
+            // CREATING USER
             var result = await UserManager.CreateAsync(identityUser, user.Password);
             if (!result.Succeeded) return Ok(result.Errors.FirstOrDefault()?.Description);
 
-            if (!string.IsNullOrEmpty(user.Role))
-            {
-                var roleExist = await RoleManager.RoleExistsAsync(user.Role);
-                if (!roleExist)
-                {
-                    await RoleManager.CreateAsync(new IdentityRole(user.Role));
-                }
-                await UserManager.AddToRoleAsync(identityUser, user.Role);
-
-                if (RolePermissions.RolePermissionMaping.ContainsKey(user.Role))
-                {
-                    foreach (var permission in RolePermissions.RolePermissionMaping[user.Role])
-                    {
-                        await UserManager.AddClaimAsync(identityUser, new System.Security.Claims.Claim("Permission", permission));
-                    }
-                }
-            }
+            // CHECKING ROLE
+            var isRoleAdded = await CustomMethods.HandlingRoleAddOrUpdate(identityUser, user);
+            if (!isRoleAdded) return BadRequest(Constant.MessageForRole);
 
             return Ok(result);
         }
 
-        [HttpPut("/update")]
-        public async Task<IActionResult> UpdateUser([FromBody] UserViewModel user)
+        [Authorize]
+        [Authorize(Policy = Permission.ManageUser)]
+        [HttpGet("/GetAllUser")]
+        public async Task<IActionResult> GetAllUser()
         {
-            var existingUser = await UserManager.FindByIdAsync(user.UserId);
-            if (existingUser == null) return NotFound("User not found.");
+            var users = await ApplicationDb.Users.ToListAsync();
+            var result = new List<UserViewModel>();
 
-            existingUser.UserName = user.Email;
-            existingUser.Email = user.Email;
-
-
-            var result = await UserManager.UpdateAsync(existingUser);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors.First().Description);
-
-            if (!string.IsNullOrEmpty(user.ConfirmedPassword))
+            foreach (var user in users)
             {
-                var changePassword = await UserManager.ChangePasswordAsync(existingUser, user.Password, user.ConfirmedPassword);
-                if (!changePassword.Succeeded) return Ok(result.Errors.First().Description);
-            }
-
-            if (!string.IsNullOrEmpty(user.Role))
-            {
-                var roleExist = await RoleManager.RoleExistsAsync(user.Role);
-                if (!roleExist)
+                result.Add(new UserViewModel
                 {
-                    await RoleManager.CreateAsync(new IdentityRole(user.Role));
-                }
-                await UserManager.AddToRoleAsync(existingUser, user.Role);
+                    Email = user.Email,
+                    FullName = user.UserName,
+                    Role = await CustomMethods.GetRoleByIdentityUser(user),
+                    Permissions = await CustomMethods.GetPermissionByIdentityUser(user),
+                });
             }
 
             return Ok(result);

@@ -41,7 +41,7 @@ namespace Authentication.BackendHost.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -149,7 +149,7 @@ namespace Authentication.BackendHost.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("UserName")
+                    b.Property<string>("FullName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 

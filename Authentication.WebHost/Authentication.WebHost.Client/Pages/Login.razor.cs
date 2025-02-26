@@ -28,7 +28,7 @@ namespace Authentication.WebHost.Client.Pages
             {
                 Email = obj.Email,
                 Password = obj.Password,
-                UserName = obj.Email,
+                FullName = obj.Email,
                 Role = obj.Role,
             };
 
