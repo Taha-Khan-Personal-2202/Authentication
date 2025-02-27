@@ -11,22 +11,31 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddIdentity<User, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
-
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5215") });
-builder.Services.AddScoped<CustomMethods>();
-
-// 1. Read JWT settings from appsettings.json
+// 1. READ JWT SETTINGS FROM APPSETTINGS.JSON
 var jwtSettings = builder.Configuration.GetSection("JwtSetting");
 var secret = jwtSettings["Secret"];
 var secretKey = Encoding.UTF8.GetBytes(secret);
 
+// ADDING DATABASE
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// CONFIGURING HTTP CLIENT
+builder.Services.AddScoped(sp =>
+    new HttpClient { BaseAddress = new Uri("http://localhost:5215") });
+
+// ADDING IDENTITY 
+builder.Services.AddIdentity<User, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
+
+// CUSTOM SERVICES
+builder.Services.AddSingleton<JwtService>();
+builder.Services.AddScoped<CustomMethods>();
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
+
+// CONFIGURING AUTHENTICATION AND AUTHORIZATION
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -67,41 +76,21 @@ builder.Services.AddAuthentication(options =>
                 return Task.CompletedTask;
             }
         };
-
-
     });
-;
-
-// Add services to the container.
-builder.Services.AddSingleton<JwtService>();
-
-// Register Custom Policy Provider
-builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
-
-// Ensure Authorization Policies Are Configured
 builder.Services.AddAuthorization(options =>
 {
-    Console.WriteLine("Registering policies dynamically...");
     foreach (var role in RolePermissions.RolePermissionMaping)
     {
         foreach (var permission in role.Value)
         {
-            Console.WriteLine($"Adding policy: {permission}");
             options.AddPolicy(permission, policy =>
                 policy.Requirements.Add(new PermissionRequirement(permission)));
         }
     }
 });
 
-
-
-
 builder.Services.AddControllers();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddSwaggerGen();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAllOrigins",
@@ -119,7 +108,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAllOrigins"); // Add this before app.UseAuthorization()
+app.UseCors("AllowAllOrigins");
 
 app.UseHttpsRedirection();
 
