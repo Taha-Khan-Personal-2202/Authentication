@@ -77,6 +77,7 @@ builder.Services.AddAuthentication(options =>
             }
         };
     });
+
 builder.Services.AddAuthorization(options =>
 {
     foreach (var role in RolePermissions.RolePermissionMaping)

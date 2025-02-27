@@ -132,7 +132,7 @@ namespace Authentication.BackendHost.Controllers
             var permissions = await CustomMethods.GetPermissionByIdentityUser(ExistUser);
 
             // GENERATE JWT TOKEN 
-            var token = JwtService.GenerateToken(ExistUser.Id, ExistUser.UserName, role, permissions);
+            var token = JwtService.GenerateToken(ExistUser.Id, ExistUser.Email, ExistUser.UserName, role, permissions);
 
             user.FullName = ExistUser.UserName;
             user.token = token;

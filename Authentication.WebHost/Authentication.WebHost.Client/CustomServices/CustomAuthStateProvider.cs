@@ -30,11 +30,13 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
 
+            var email = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var userName = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
             var role = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 
             var claims = new List<Claim>
                 {
+                    new Claim(ClaimTypes.Email, email),
                     new Claim(ClaimTypes.Name, userName),
                     new Claim(ClaimTypes.Role, role)
                 };
@@ -57,9 +59,10 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     }
 
 
-    public void NotifyUserAuthentication(string token, string userName, string role, IList<string>? permissions)
+    public void NotifyUserAuthentication(string token, string email, string userName, string role, IList<string>? permissions)
     {
         var identity = new ClaimsIdentity(new[] {
+                new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.Role, role)
             }, "jwt");

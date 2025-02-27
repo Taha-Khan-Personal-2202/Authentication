@@ -3,6 +3,7 @@ using Authentication.Shared.Constants;
 using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Identity;
+using System.Security;
 
 namespace Authentication.BackendHost.CustomServices
 {
@@ -64,6 +65,14 @@ namespace Authentication.BackendHost.CustomServices
         {
             if (RolePermissions.RolePermissionMaping.ContainsKey(userViewModel.Role))
             {
+
+                var permissions = await GetPermissionByIdentityUser(identityUser);
+
+                foreach (var item in permissions)
+                {
+                    await UserManager.RemoveClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, item));
+                }
+
                 foreach (var permission in RolePermissions.RolePermissionMaping[userViewModel.Role])
                 {
                     await UserManager.AddClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, permission));
