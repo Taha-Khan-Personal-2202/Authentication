@@ -20,7 +20,7 @@ builder.Services.AddIdentity<User, IdentityRole>()
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5215") });
 
-// 1. Read JWT settings from appsettings.json
+// 1. Read JWT settings from appsettings.jsons
 var jwtSettings = builder.Configuration.GetSection("JwtSetting");
 var secret = jwtSettings["Secret"];
 var secretKey = Encoding.UTF8.GetBytes(secret);
