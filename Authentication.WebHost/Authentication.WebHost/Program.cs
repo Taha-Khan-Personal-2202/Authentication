@@ -15,6 +15,8 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7134") });
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RoleService>();
+
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>(); // Use it for Blazor Authentication
 

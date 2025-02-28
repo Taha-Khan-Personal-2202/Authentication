@@ -49,7 +49,7 @@ public class AuthService
 
     public async Task<UserViewModel> GetByEmail(string email)
     {
-        var result = await _http.GetFromJsonAsync<UserViewModel>($"/GetByEmail/{email}");
+        var result = await _http.GetFromJsonAsync<UserViewModel>($"/GetRoleById/{email}");
         return result;
     }
 

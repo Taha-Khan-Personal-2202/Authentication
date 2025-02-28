@@ -6,6 +6,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:5215") });
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<RoleService>();
 
 builder.Services.AddAuthorizationCore();
 

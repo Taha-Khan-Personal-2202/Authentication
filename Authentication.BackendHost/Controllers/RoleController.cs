@@ -17,21 +17,21 @@ namespace Authentication.BackendHost.Controllers
             RoleManager = roleManager;
         }
 
-        [HttpGet]
+        [HttpGet("/GetAllRoles")]
         public IActionResult Get()
         {
             var roles = RoleManager.Roles.ToList();
             return Ok(roles);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("/GetRoleById/{id}")]
         public async Task<IActionResult> Get(string id)
         {
             var role = await RoleManager.FindByIdAsync(id);
             return Ok(role);
         }
 
-        [HttpPost]
+        [HttpPost("/Add")]
         public async Task<IActionResult> Post([FromBody] string value)
         {
             var isExist = await RoleManager.RoleExistsAsync(value);
@@ -44,7 +44,7 @@ namespace Authentication.BackendHost.Controllers
             return Ok(result);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("/Update/{id}")]
         public async Task<IActionResult> Put(string id, [FromBody] string value)
         {
             var isExist = await RoleManager.FindByIdAsync(id);
@@ -58,7 +58,7 @@ namespace Authentication.BackendHost.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("/Delete/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var role = await RoleManager.FindByIdAsync(id);
