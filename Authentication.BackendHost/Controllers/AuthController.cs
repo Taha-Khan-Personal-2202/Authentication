@@ -80,7 +80,7 @@ namespace Authentication.BackendHost.Controllers
         public async Task<IActionResult> UpdateUser([FromBody] UserViewModel userViewModel)
         {
             // GETTING USER BY EMAIL
-            var identityUser = await CustomMethods.FindUserByEmail(userViewModel.Email);
+            var identityUser = await CustomMethods.FindUserByEmail(userViewModel.Email)!;
             if (identityUser == null) return NotFound(Constant.MessageForUserNotFound);
 
             // ASSIGNING NEW VALUES
