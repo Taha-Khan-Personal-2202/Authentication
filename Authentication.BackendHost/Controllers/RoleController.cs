@@ -25,9 +25,9 @@ namespace Authentication.BackendHost.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get(string id)
         {
-            var role = await RoleManager.FindByIdAsync(id.ToString());
+            var role = await RoleManager.FindByIdAsync(id);
             return Ok(role);
         }
 
@@ -45,13 +45,13 @@ namespace Authentication.BackendHost.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] string value)
+        public async Task<IActionResult> Put(string id, [FromBody] string value)
         {
-            var isExist = await RoleManager.RoleExistsAsync(value);
-            if (!isExist) return BadRequest("Invalid role");
+            var isExist = await RoleManager.FindByIdAsync(id);
+            if (isExist == null) return BadRequest($"{value} Role does not exist.");
 
             var result = await RoleManager.UpdateAsync(new IdentityRole(value));
-            if(!result.Succeeded) return BadRequest(result.Errors);
+            if (!result.Succeeded) return BadRequest(result.Errors);
 
             return Ok(result);
         }
@@ -59,10 +59,23 @@ namespace Authentication.BackendHost.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var isExist = await RoleManager.FindByIdAsync(id.ToString());
-            if (!isExist) return BadRequest("Invalid role");
+            var role = await RoleManager.FindByIdAsync(id.ToString());
+            if (role == null)
+                return NotFound($"Role with ID {id} does not exist.");
 
+            try
+            {
+                var result = await RoleManager.DeleteAsync(role);
+                if (!result.Succeeded)
+                    return BadRequest("Failed to delete the role.");
 
+                return NoContent();
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, $"An error occurred while deleting the role: {e.Message}");
+            }
         }
+
     }
 }
