@@ -32,7 +32,7 @@ else
 			@foreach (var user in Users)
 			{
 				<tr>
-					<td>@user.UserName</td>
+					<td>@user.FullName</td>
 					<td>@user.Email</td>
 					<td>@user.Role</td>
 					<td @onclick="() => OpenAddEditModal(user.Email)">Edit</td>

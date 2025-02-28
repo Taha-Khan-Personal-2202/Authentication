@@ -14,7 +14,7 @@ namespace Authentication.BackendHost.CustomServices
             _configuration = configuration;
         }
 
-        public string GenerateToken(string userId, string userName, string role, List<string>? permissions)
+        public string GenerateToken(string userId,string email, string userName, string role, List<string>? permissions)
         {
             var jwtSettings = _configuration.GetSection("JwtSetting");
             var secretKey = Encoding.UTF8.GetBytes(jwtSettings["Secret"]);
@@ -23,7 +23,8 @@ namespace Authentication.BackendHost.CustomServices
             var claims = new List<Claim>()
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
-                new Claim(ClaimTypes.Email, userName),
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.Role, role)
             };
 

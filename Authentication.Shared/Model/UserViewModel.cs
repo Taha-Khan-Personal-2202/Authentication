@@ -3,10 +3,10 @@
     public class UserViewModel
     {
         public string Email { get; set; }
-        public string UserName { get; set; }
+        public string FullName { get; set; } = string.Empty;
         public string Password { get; set; }
         public string? UserId { get; set; } = string.Empty;
-        public string? ConfirmedPassword { get; set; } = string.Empty;
+        public string? NewPassword { get; set; } = string.Empty;
 
         public string Role { get; set; } = string.Empty;
 

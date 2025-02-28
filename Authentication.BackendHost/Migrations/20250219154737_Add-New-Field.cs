@@ -13,14 +13,14 @@ namespace Authentication.BackendHost.Migrations
             migrationBuilder.RenameColumn(
                 name: "Name",
                 table: "ApplicationUsers",
-                newName: "UserName");
+                newName: "FullName");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(
-                name: "UserName",
+                name: "FullName",
                 table: "ApplicationUsers",
                 newName: "Name");
         }
