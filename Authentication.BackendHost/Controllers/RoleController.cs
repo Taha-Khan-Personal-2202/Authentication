@@ -50,16 +50,18 @@ namespace Authentication.BackendHost.Controllers
             var isExist = await RoleManager.FindByIdAsync(id);
             if (isExist == null) return BadRequest($"{value} Role does not exist.");
 
-            var result = await RoleManager.UpdateAsync(new IdentityRole(value));
+            isExist.Name = value;
+
+            var result = await RoleManager.UpdateAsync(isExist);
             if (!result.Succeeded) return BadRequest(result.Errors);
 
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var role = await RoleManager.FindByIdAsync(id.ToString());
+            var role = await RoleManager.FindByIdAsync(id);
             if (role == null)
                 return NotFound($"Role with ID {id} does not exist.");
 
