@@ -78,17 +78,21 @@ builder.Services.AddAuthentication(options =>
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    foreach (var role in RolePermissions.RolePermissionMaping)
-    {
-        foreach (var permission in role.Value)
-        {
-            options.AddPolicy(permission, policy =>
-                policy.Requirements.Add(new PermissionRequirement(permission)));
-        }
-    }
-});
+builder.Services.AddAuthorization();
+
+//builder.Services.AddAuthorization(options =>
+//{
+//    foreach (var role in RolePermissionsMapping.RolePermissionMaping)
+//    {
+//        foreach (var permission in role.Value)
+//        {
+//            options.AddPolicy(permission, policy =>
+//                policy.Requirements.Add(new PermissionRequirement(permission)));
+//        }
+//    }
+//});
+
+
 
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
@@ -97,10 +101,20 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAllOrigins",
         policy => policy.AllowAnyOrigin()
                         .AllowAnyMethod()
-                        .AllowAnyHeader()); // <-- Add AllowAnyHeader()
+                        .AllowAnyHeader());
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    var customMethods = services.GetRequiredService<CustomMethods>();
+
+    await new PermissionCheck(customMethods).SeedPermissions(roleManager, dbContext);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

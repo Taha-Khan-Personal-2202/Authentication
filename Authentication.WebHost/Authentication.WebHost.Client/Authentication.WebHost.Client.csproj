@@ -18,4 +18,10 @@
     <ProjectReference Include="..\..\Authentication.Shared\Authentication.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Components\RoleAddEditModal.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
+
 </Project>

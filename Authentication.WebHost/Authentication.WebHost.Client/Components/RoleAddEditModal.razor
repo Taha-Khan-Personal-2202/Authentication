@@ -1,0 +1,49 @@
+﻿
+<div class="modal fade show d-block" tabindex="-1">
+	<div class="modal-dialog modal-lg shadow-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Create Role</h5>
+				<button type="button" class="btn-close" @onclick="CloseModal"></button>
+			</div>
+			<div class="modal-body">
+				<EditForm Model="EditModel" OnValidSubmit="Submit" FormName="RoleAddAndEdit">
+					<DataAnnotationsValidator />
+					<div class="mb-3">
+						<label class="form-label">Name</label>
+						<InputText class="form-control" @bind-Value="EditModel.Name" />
+					</div>
+
+					<div>
+						@if (permissionList != null && permissionList.Any())
+						{
+							<div class="container mt-4">
+								<div class="row">
+									@foreach (var item in permissionList)
+									{
+										<div class="col-12 col-md-6">
+											<div class="d-flex justify-content-between align-items-center border p-2 rounded mb-2 shadow-sm">
+												<span class="fw-semibold">@item.Name</span>
+												<div class="form-check form-switch">
+													<input class="form-check-input" type="checkbox" value="@item.IsActive" checked="@item.IsActive" @oninput="() => item.IsActive = !item.IsActive" />
+												</div>
+											</div>
+										</div>
+									}
+								</div>
+							</div>
+						}
+
+					</div>
+
+					<div class="text-end">
+						<button type="submit" class="btn btn-primary">Save</button>
+						<button type="button" class="btn btn-secondary ms-2" @onclick="CloseModal">Cancel</button>
+					</div>
+				</EditForm>
+			</div>
+		</div>
+	</div>
+</div>
+
+<Loader IsLoading="@isLoading" />

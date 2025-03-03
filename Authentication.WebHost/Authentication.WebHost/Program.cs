@@ -52,17 +52,19 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie();
 
-builder.Services.AddAuthorization(options =>
-{
-    foreach (var role in RolePermissions.RolePermissionMaping)
-    {
-        foreach (var permission in role.Value)
-        {
-            options.AddPolicy(permission, policy =>
-                policy.RequireClaim("Permission", permission));
-        }
-    }
-});
+//builder.Services.AddAuthorization(options =>
+//{
+//    foreach (var role in RolePermissionsMapping.RolePermissionMaping)
+//    {
+//        foreach (var permission in role.Value)
+//        {
+//            options.AddPolicy(permission, policy =>
+//                policy.RequireClaim("Permission", permission));
+//        }
+//    }
+//});
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 

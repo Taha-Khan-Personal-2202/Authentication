@@ -1,5 +1,6 @@
 ﻿using Authentication.Shared.Model;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace Authentication.WebHost.Client.Pages
 {
@@ -13,6 +14,8 @@ namespace Authentication.WebHost.Client.Pages
         private string editingRoleId;
         private string roleName;
 
+        public bool showEditModel = false;
+        
         protected override async Task OnInitializedAsync()
         {
             await LoadRoles();
@@ -21,37 +24,13 @@ namespace Authentication.WebHost.Client.Pages
         private async Task LoadRoles()
         {
             roles = await RoleService.GetAllRoles();
+            StateHasChanged();
         }
 
-        private async Task AddRole()
+        private void EditRole(string id)
         {
-            if (!string.IsNullOrWhiteSpace(newRoleName))
-            {
-                await RoleService.Add(newRoleName);
-                newRoleName = "";
-                await LoadRoles();
-            }
-        }
-
-        private void EditRole(RoleViewModel role)
-        {
-            editingRoleId = role.Id;
-            roleName = role.Name;
-        }
-
-        private async Task UpdateRole(string id)
-        {
-            if (!string.IsNullOrWhiteSpace(roleName))
-            {
-                await RoleService.Update(id, roleName);
-                editingRoleId = null;
-                await LoadRoles();
-            }
-        }
-
-        private void CancelEdit()
-        {
-            editingRoleId = null;
+            editingRoleId = id;
+            showEditModel = true;
         }
 
         private async Task DeleteRole(string id)
@@ -59,7 +38,6 @@ namespace Authentication.WebHost.Client.Pages
             await RoleService.DeleteRole(id);
             await LoadRoles();
         }
-
 
     }
 }

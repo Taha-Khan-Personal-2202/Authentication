@@ -13,15 +13,16 @@ public class RoleService
         _js = js;
     }
 
-    public async Task<bool> Add(string roleName)
+    public async Task<bool> Add(RoleViewModel model)
     {
-        var response = await _http.PostAsJsonAsync("/Add", roleName);
+        var response = await _http.PostAsJsonAsync("/AddRoles", model);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> Update(string id, string roleName)
+    public async Task<bool> Update(string id, RoleViewModel model)
     {
-        var response = await _http.PutAsJsonAsync($"/Update/{id}", roleName);
+        model.ConcurrencyStamp = "";
+        var response = await _http.PutAsJsonAsync($"/Update/{id}", model);
         return response.IsSuccessStatusCode;
     }
 
@@ -33,6 +34,11 @@ public class RoleService
     public async Task<List<RoleViewModel>> GetAllRoles()
     {
         return await _http.GetFromJsonAsync<List<RoleViewModel>>("/GetAllRoles");
+    }
+    
+    public async Task<List<PermissionModel>> GetAllPermissions()
+    {
+        return await _http.GetFromJsonAsync<List<PermissionModel>>("/GetAllPermissions");
     }
 
     public async Task<bool> DeleteRole(string id)

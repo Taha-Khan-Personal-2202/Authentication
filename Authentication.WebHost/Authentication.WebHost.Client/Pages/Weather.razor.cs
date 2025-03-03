@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using Authentication.Shared.Constants;
 using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -74,7 +75,7 @@ namespace Authentication.WebHost.Client.Pages
         public bool CheckPolicy()
         {
             var policyProvider = ServiceProvider.GetRequiredService<IAuthorizationPolicyProvider>();
-            var policy = policyProvider.GetPolicyAsync(Permission.ManageUser).GetAwaiter().GetResult();
+            var policy = policyProvider.GetPolicyAsync(Constant.ManageUser).GetAwaiter().GetResult();
             return policy != null;
         }
 

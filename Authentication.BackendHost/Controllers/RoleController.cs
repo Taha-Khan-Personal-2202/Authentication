@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Authentication.BackendHost.CustomServices;
+using Authentication.BackendHost.DataBase;
+using Authentication.Shared.Model;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using Microsoft.EntityFrameworkCore;
 
 namespace Authentication.BackendHost.Controllers
 {
@@ -10,11 +11,15 @@ namespace Authentication.BackendHost.Controllers
     [ApiController]
     public class RoleController : ControllerBase
     {
+        public CustomMethods CustomMethods { get; }
+        public ApplicationDbContext ApplicationDb { get; }
         public RoleManager<IdentityRole> RoleManager { get; }
 
-        public RoleController(RoleManager<IdentityRole> roleManager)
+        public RoleController(RoleManager<IdentityRole> roleManager, CustomMethods customMethods, ApplicationDbContext applicationDb)
         {
             RoleManager = roleManager;
+            CustomMethods = customMethods;
+            ApplicationDb = applicationDb;
         }
 
         [HttpGet("/GetAllRoles")]
@@ -28,32 +33,67 @@ namespace Authentication.BackendHost.Controllers
         public async Task<IActionResult> Get(string id)
         {
             var role = await RoleManager.FindByIdAsync(id);
-            return Ok(role);
+
+            RoleViewModel roleViewModel = new RoleViewModel();
+
+            roleViewModel.Id = role.Id;
+            roleViewModel.Name = role.Name;
+            roleViewModel.ConcurrencyStamp = role.ConcurrencyStamp;
+            roleViewModel.NormalizedName = role.NormalizedName;
+            roleViewModel.PermissionIds = await CustomMethods.GetAssignPermission(role.Id);
+
+            return Ok(roleViewModel);
         }
 
-        [HttpPost("/Add")]
-        public async Task<IActionResult> Post([FromBody] string value)
+        [HttpPost("/AddRoles")]
+        public async Task<IActionResult> Post([FromBody] RoleViewModel model)
         {
-            var isExist = await RoleManager.RoleExistsAsync(value);
+            var isExist = await RoleManager.RoleExistsAsync(model.Name);
             if (isExist) return BadRequest("Role is already added.");
 
-            var result = await RoleManager.CreateAsync(new IdentityRole(value));
+            var identityRole = new IdentityRole(model.Name);
+
+            var result = await RoleManager.CreateAsync(identityRole);
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
+            foreach (var permissionId in model.PermissionIds)
+            {
+                ApplicationDb.RolePermissions.Add(new RolePermissionModel
+                {
+                    RoleId = identityRole.Id,
+                    PermissionId = permissionId
+                });
+            }
+
+            await ApplicationDb.SaveChangesAsync();
             return Ok(result);
         }
 
         [HttpPut("/Update/{id}")]
-        public async Task<IActionResult> Put(string id, [FromBody] string value)
+        public async Task<IActionResult> Put(string id, [FromBody] RoleViewModel model)
         {
             var isExist = await RoleManager.FindByIdAsync(id);
-            if (isExist == null) return BadRequest($"{value} Role does not exist.");
+            if (isExist == null) return BadRequest($"{model.Name} Role does not exist.");
 
-            isExist.Name = value;
+            isExist.Name = model.Name;
 
             var result = await RoleManager.UpdateAsync(isExist);
             if (!result.Succeeded) return BadRequest(result.Errors);
+
+            var alreadyAddedPermission = ApplicationDb.RolePermissions.Where(w => w.RoleId == isExist.Id).ToList();
+            ApplicationDb.RolePermissions.RemoveRange(alreadyAddedPermission);
+
+            foreach (var permissionId in model.PermissionIds)
+            {
+                ApplicationDb.RolePermissions.Add(new RolePermissionModel
+                {
+                    RoleId = isExist.Id,
+                    PermissionId = permissionId
+                });
+            }
+
+            await ApplicationDb.SaveChangesAsync();
 
             return Ok(result);
         }
@@ -78,6 +118,14 @@ namespace Authentication.BackendHost.Controllers
                 return StatusCode(500, $"An error occurred while deleting the role: {e.Message}");
             }
         }
+
+        [HttpGet("/GetAllPermissions")]
+        public IActionResult GetAllPermissions()
+        {
+            var permission = ApplicationDb.Permissions.ToList();
+            return Ok(permission);
+        }
+
 
     }
 }

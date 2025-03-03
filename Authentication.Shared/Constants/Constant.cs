@@ -8,5 +8,9 @@
         public static string MessageForWrongPassword = "Invalid Password.";
         public static string MessageForRole = "Role could not be updated.";
         public static string MessageForPermissionError = "Could not add or update permission try to check the role and its permission added.";
+
+
+        public static string ManageUser = "Permissions.ManageUser";
+        public static string ViewReports = "Permissions.ViewReports";
     }
 }

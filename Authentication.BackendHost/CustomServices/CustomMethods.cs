@@ -3,6 +3,7 @@ using Authentication.Shared.Constants;
 using Authentication.Shared.Model;
 using Authentication.Shared.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Security;
 
 namespace Authentication.BackendHost.CustomServices
@@ -12,12 +13,14 @@ namespace Authentication.BackendHost.CustomServices
         public UserManager<User> UserManager { get; set; }
         public SignInManager<User> SignInManager { get; }
         public RoleManager<IdentityRole> RoleManager { get; }
+        public ApplicationDbContext ApplicationDb { get; }
 
-        public CustomMethods(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager)
+        public CustomMethods(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext applicationDb)
         {
             UserManager = userManager;
             SignInManager = signInManager;
             RoleManager = roleManager;
+            ApplicationDb = applicationDb;
         }
 
         // CUSTOM METHODS
@@ -63,9 +66,8 @@ namespace Authentication.BackendHost.CustomServices
 
         public async Task<bool> HandlingPermissionAddOrUpdate(User identityUser, UserViewModel userViewModel)
         {
-            if (RolePermissions.RolePermissionMaping.ContainsKey(userViewModel.Role))
+            if (RolePermissionsMapping.RolePermissionMaping.ContainsKey(userViewModel.Role))
             {
-
                 var permissions = await GetPermissionByIdentityUser(identityUser);
 
                 foreach (var item in permissions)
@@ -73,7 +75,7 @@ namespace Authentication.BackendHost.CustomServices
                     await UserManager.RemoveClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, item));
                 }
 
-                foreach (var permission in RolePermissions.RolePermissionMaping[userViewModel.Role])
+                foreach (var permission in RolePermissionsMapping.RolePermissionMaping[userViewModel.Role])
                 {
                     await UserManager.AddClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, permission));
                 }
@@ -97,5 +99,23 @@ namespace Authentication.BackendHost.CustomServices
             return await UserManager.FindByEmailAsync(email);
         }
 
+        public List<string> GetPermission()
+        {
+            var permission = new List<string>();
+            permission.Add(Constant.ManageUser);
+            permission.Add(Constant.ViewReports);
+            
+            return permission;
+        }
+
+        public async Task<List<int>> GetAssignPermission(string roleId)
+        {
+            var assignedPermissions = await ApplicationDb.RolePermissions
+                                        .Where(rp => rp.RoleId == roleId)
+                                        .Select(rp => rp.PermissionId)
+                                        .ToListAsync();
+
+            return assignedPermissions;
+        }
     }
 }
