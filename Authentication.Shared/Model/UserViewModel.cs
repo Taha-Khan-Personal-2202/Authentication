@@ -15,5 +15,6 @@
         public string? token {get;set;} = string.Empty;
 
         public List<string>? Permissions { get; set; }
+        public string RoleId { get; set; } = string.Empty;
     }
 }

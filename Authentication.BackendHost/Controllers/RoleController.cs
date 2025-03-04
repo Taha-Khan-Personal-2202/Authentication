@@ -126,6 +126,12 @@ namespace Authentication.BackendHost.Controllers
             return Ok(permission);
         }
 
+        [HttpGet("/GetRolePermissions")]
+        public async Task<IActionResult> GetRolePermissions()
+        {
+            var rolePermissions = await CustomMethods.GetRolePermissionsAsync();
+            return Ok(rolePermissions);
+        }
 
     }
 }

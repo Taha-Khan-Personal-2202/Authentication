@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using Authentication.Shared.Model;
 using Authentication.WebHost.Components;
@@ -52,17 +53,26 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie();
 
-//builder.Services.AddAuthorization(options =>
-//{
-//    foreach (var role in RolePermissionsMapping.RolePermissionMaping)
-//    {
-//        foreach (var permission in role.Value)
-//        {
-//            options.AddPolicy(permission, policy =>
-//                policy.RequireClaim("Permission", permission));
-//        }
-//    }
-//});
+// Create a scope before calling `Build()`
+using var scope = builder.Services.BuildServiceProvider().CreateScope();
+var roleService = scope.ServiceProvider.GetRequiredService<RoleService>();
+var permissions = await roleService.GetAllRolePermissionsAsync();
+
+// Move authorization configuration before `Build()`
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var role in permissions)
+    {
+        foreach (var permission in role.Value)
+        {
+            options.AddPolicy(permission, policy =>
+            {
+                policy.RequireClaim("Permission", permission);
+            });
+        }
+    }
+});
+
 
 builder.Services.AddAuthorization();
 

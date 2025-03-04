@@ -70,8 +70,10 @@ namespace Authentication.BackendHost.Controllers
                 Email = ExistUser.Email,
                 FullName = ExistUser.UserName,
                 Role = await CustomMethods.GetRoleByIdentityUser(ExistUser),
-                Permissions = await CustomMethods.GetPermissionByIdentityUser(ExistUser)
+                Permissions = await CustomMethods.GetPermissionByIdentityUser(ExistUser),
             };
+
+            ViewModel.RoleId = await CustomMethods.GetRoleIdByName(ViewModel.Role);
 
             return Ok(ViewModel);
         }
@@ -129,7 +131,7 @@ namespace Authentication.BackendHost.Controllers
             if (role == null || !role.Any()) return BadRequest(Constant.MessageForRole);
 
             // GETTING PERMISSION
-            var permissions = await CustomMethods.GetPermissionByIdentityUser(ExistUser);
+            var permissions = await CustomMethods.GetPermissionByRoleName(role);
 
             // GENERATE JWT TOKEN 
             var token = JwtService.GenerateToken(ExistUser.Id, ExistUser.Email, ExistUser.UserName, role, permissions);

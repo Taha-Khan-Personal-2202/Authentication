@@ -35,7 +35,7 @@ builder.Services.AddScoped<CustomMethods>();
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
 builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 
-// CONFIGURING AUTHENTICATION AND AUTHORIZATION
+// CONFIGURING AUTHENTICATION
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -56,44 +56,30 @@ builder.Services.AddAuthentication(options =>
             ValidateLifetime = true, // Token expiration check
             ClockSkew = TimeSpan.Zero // No delay in expiration
         };
-
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-                Console.WriteLine($"Received Token: {token}");
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                Console.WriteLine("Token is Validated Successfully.");
-                return Task.CompletedTask;
-            },
-            OnAuthenticationFailed = context =>
-            {
-                Console.WriteLine($"Authentication Failed: {context.Exception.Message}");
-                return Task.CompletedTask;
-            }
-        };
     });
 
-builder.Services.AddAuthorization();
+// DYNAMICALLY FETCH PERMISSIONS FROM DATABASE BEFORE BUILDING APP
+using (var scope = builder.Services.BuildServiceProvider().CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var customMethods = services.GetRequiredService<CustomMethods>();
 
-//builder.Services.AddAuthorization(options =>
-//{
-//    foreach (var role in RolePermissionsMapping.RolePermissionMaping)
-//    {
-//        foreach (var permission in role.Value)
-//        {
-//            options.AddPolicy(permission, policy =>
-//                policy.Requirements.Add(new PermissionRequirement(permission)));
-//        }
-//    }
-//});
+    var rolePermissions = await customMethods.GetRolePermissionsAsync(); // FETCH FROM DB
 
+    builder.Services.AddAuthorization(options =>
+    {
+        foreach (var role in rolePermissions)
+        {
+            foreach (var permission in role.Value)
+            {
+                options.AddPolicy(permission, policy =>
+                    policy.Requirements.Add(new PermissionRequirement(permission)));
+            }
+        }
+    });
+}
 
-
+// ADD CONTROLLERS & SWAGGER
 builder.Services.AddControllers();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
@@ -104,8 +90,9 @@ builder.Services.AddCors(options =>
                         .AllowAnyHeader());
 });
 
-var app = builder.Build();
+var app = builder.Build(); 
 
+// SEED PERMISSIONS
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;

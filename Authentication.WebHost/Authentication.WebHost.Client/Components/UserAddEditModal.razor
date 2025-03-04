@@ -27,7 +27,15 @@
 					</div>
 					<div class="mb-3">
 						<label class="form-label">Role</label>
-						<InputText class="form-control" @bind-Value="EditModel.Role" />
+						<InputSelect class="form-control" @bind-Value="EditModel.RoleId" @oninput="GetRoleName">
+							@if (RoleList != null && RoleList.Any())
+							{
+								@foreach (var item in RoleList)
+								{
+									<option value="@item.Id">@item.Name</option>
+								}
+							}
+						</InputSelect>
 					</div>
 					<div class="text-end">
 						<button type="submit" class="btn btn-primary">Save</button>

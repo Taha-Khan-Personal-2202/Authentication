@@ -66,26 +66,31 @@ namespace Authentication.BackendHost.CustomServices
 
         public async Task<bool> HandlingPermissionAddOrUpdate(User identityUser, UserViewModel userViewModel)
         {
-            if (RolePermissionsMapping.RolePermissionMaping.ContainsKey(userViewModel.Role))
-            {
-                var permissions = await GetPermissionByIdentityUser(identityUser);
+            var permissionIds = await GetAssignPermission(userViewModel.RoleId.ToString());
 
-                foreach (var item in permissions)
-                {
-                    await UserManager.RemoveClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, item));
-                }
-
-                foreach (var permission in RolePermissionsMapping.RolePermissionMaping[userViewModel.Role])
-                {
-                    await UserManager.AddClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, permission));
-                }
-            }
-            else
+            if (permissionIds == null || !permissionIds.Any())
             {
                 return false;
             }
+
+            var permissions = await GetAssignPermissionNames(permissionIds);
+
+            // Remove existing claims
+            var existingPermissions = await GetPermissionByIdentityUser(identityUser);
+            foreach (var item in existingPermissions)
+            {
+                await UserManager.RemoveClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, item));
+            }
+
+            // Add new claims
+            foreach (var permission in permissions)
+            {
+                await UserManager.AddClaimAsync(identityUser, new System.Security.Claims.Claim(Constant.PermissionClaimType, permission));
+            }
+
             return true;
         }
+
 
         public async Task<(bool, string)> CheckPassword(User identityUser, UserViewModel userViewModel)
         {
@@ -104,7 +109,7 @@ namespace Authentication.BackendHost.CustomServices
             var permission = new List<string>();
             permission.Add(Constant.ManageUser);
             permission.Add(Constant.ViewReports);
-            
+
             return permission;
         }
 
@@ -116,6 +121,47 @@ namespace Authentication.BackendHost.CustomServices
                                         .ToListAsync();
 
             return assignedPermissions;
+        }
+
+        public async Task<List<string>> GetAssignPermissionNames(List<int> permissionIds)
+        {
+            var assignedPermissions = await ApplicationDb.Permissions
+                                        .Where(p => permissionIds.Contains(p.Id))
+                                        .Select(pn => pn.Name)
+                                        .ToListAsync();
+
+            return assignedPermissions;
+        }
+
+        public async Task<Dictionary<string, List<string>>> GetRolePermissionsAsync()
+        {
+            return await ApplicationDb.RolePermissions
+                .Include(rp => rp.Role)
+                .Include(rp => rp.Permission)
+                .GroupBy(rp => rp.Role.Name)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(rp => rp.Permission.Name).ToList()
+                );
+        }
+
+        public async Task<string> GetRoleNameById(string id)
+        {
+            return ApplicationDb.Roles.FirstOrDefault(f => f.Id == id)?.Name!;
+        }
+
+        public async Task<string> GetRoleIdByName(string name)
+        {
+            return ApplicationDb.Roles.FirstOrDefault(f => f.Name == name)?.Id!;
+        }
+
+        public async Task<List<string>> GetPermissionByRoleName(string name)
+        {
+            var id = ApplicationDb.Roles.FirstOrDefault(r => r.Name == name)?.Id;
+            var permissionIds = await GetAssignPermission(id);
+            var permissions = await GetAssignPermissionNames(permissionIds);
+            return permissions;
+
         }
     }
 }
